@@ -275,25 +275,42 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
 ========================================================= */
 const STORE_KEY = 'memoria-sessions';
 const NAME_KEY = 'memoria-user-name';
-let userName = 'María';
+let userName = '';  // sin valor predefinido: se pide la primera vez que se abre la app
 let sessions = [];
 
-async function loadStorage(){
+/* Guardado en el dispositivo (localStorage del navegador), para que la app recuerde
+   el nombre y el historial de conversaciones cada vez que se abre, sin depender de
+   ningún servidor. */
+function loadStorage(){
   try{
-    const nameRes = await window.storage.get(NAME_KEY);
-    if(nameRes && nameRes.value) userName = nameRes.value;
-  }catch(e){ /* no hay nombre guardado aún */ }
+    const savedName = localStorage.getItem(NAME_KEY);
+    if(savedName) userName = savedName;
+  }catch(e){ /* localStorage no disponible (modo privado muy restrictivo, etc.) */ }
   try{
-    const res = await window.storage.get(STORE_KEY);
-    if(res && res.value) sessions = JSON.parse(res.value);
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) sessions = JSON.parse(raw);
   }catch(e){ sessions = []; }
 }
-async function saveSessions(){
-  try{ await window.storage.set(STORE_KEY, JSON.stringify(sessions)); }
+function saveSessions(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(sessions)); }
   catch(e){ console.error('No se pudo guardar la sesión', e); }
 }
-async function saveName(){
-  try{ await window.storage.set(NAME_KEY, userName); }catch(e){}
+function saveName(){
+  try{ localStorage.setItem(NAME_KEY, userName); }catch(e){}
+}
+
+/* Primera vez que se abre la app en este dispositivo: pide el nombre y lo recuerda para siempre. */
+function ensureName(){
+  if(userName) return;
+  let val = null;
+  while(!val){
+    val = prompt('Bienvenido/a a Memoria AI. ¿Cómo le gustaría que la llamemos?');
+    if(val && val.trim()) val = val.trim();
+    else if(val === null){ val = 'Usuario'; break; } // la persona canceló el cuadro de diálogo
+    else val = null;
+  }
+  userName = val;
+  saveName();
 }
 
 /* =========================================================
@@ -370,7 +387,9 @@ function speak(text){
       window.speechSynthesis.cancel();
       const voice = pickLatamVoice();
       // Hablar frase por frase (con una pequeña pausa entre ellas) suena más a una
-      // persona conversando que una sola oración larga y monótona.
+      // persona conversando que una sola oración larga y monótona. Además variamos
+      // levemente el ritmo, el tono y la duración de la pausa entre frases: hablar
+      // siempre con el mismo valor exacto es lo que delata a una voz sintética.
       const parts = text.split(/(?<=[.!?…])\s+/).filter(Boolean);
       const queue = parts.length ? parts : [text];
       let i = 0;
@@ -378,11 +397,14 @@ function speak(text){
         if(i >= queue.length){ resolve(); return; }
         const u = new SpeechSynthesisUtterance(queue[i]);
         u.lang = 'es-CL';
-        u.rate = 0.97;
-        u.pitch = 1.0;
+        u.rate = 0.94 + Math.random()*0.08;   // ~0.94–1.02, leve variación natural de ritmo
+        u.pitch = 0.97 + Math.random()*0.06;  // ~0.97–1.03, leve variación natural de tono
         u.volume = 1.0;
         if(voice) u.voice = voice;
-        u.onend = ()=>{ i++; setTimeout(speakNext, i<queue.length ? 200 : 0); };
+        const esUltima = i>=queue.length-1;
+        const esPregunta = /[?¿]\s*$/.test(queue[i]);
+        const pausaMs = esUltima ? 0 : (esPregunta ? 320 : 160) + Math.round(Math.random()*160);
+        u.onend = ()=>{ i++; setTimeout(speakNext, pausaMs); };
         u.onerror = ()=>{ i++; setTimeout(speakNext, 0); };
         window.speechSynthesis.speak(u);
       };
@@ -883,7 +905,7 @@ function renderDashboard(){
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
-  if(name==='home') renderHome();
+  if(name==='home'){ ensureName(); renderHome(); }
   if(name==='dashboard') renderDashboard();
 }
 
@@ -920,7 +942,8 @@ function skipSplash(){
 }
 
 function playSplash(){
-  speak(`Hola, ${userName}. Bienvenida a Memoria AI.`);
+  const saludoNombre = userName ? `Hola, ${userName}. ` : 'Hola. ';
+  speak(`${saludoNombre}Bienvenida a Memoria AI.`);
   splashTimer = setTimeout(()=>{
     if(!splashDone){ splashDone = true; showView('home'); }
   }, 5000);

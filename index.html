@@ -123,7 +123,7 @@ button{font-family:var(--font-body); cursor:pointer; border:none;}
 }
 .ai-bubble.thinking{color:var(--ink-faint); font-style:italic;}
 .pulse-ring{width:16px; height:16px; border-radius:50%; background:var(--sage);}
-.user-live{min-height:60px; color:var(--ink-soft); font-size:1.1rem; max-width:480px;}
+.user-live{display:none;}
 .type-fallback{display:none; width:100%; max-width:480px; gap:10px; margin-top:6px;}
 .type-fallback.active{display:flex;}
 .type-fallback input{flex:1; padding:14px 18px; border-radius:14px; border:1.5px solid var(--sage-soft); font-size:1rem; font-family:var(--font-body);}
@@ -460,7 +460,7 @@ function listenAuto(){
           if(ev.results[i].isFinal) finalText += t + ' ';
           else interim += t;
         }
-        live.textContent = (finalText + interim).trim();
+        // No se muestra la transcripción en pantalla; queda solo interna (en finalText) para el análisis.
         hint.textContent = 'Le escucho…';
         armWatchdog();
       };

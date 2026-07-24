@@ -120,7 +120,9 @@ button{font-family:var(--font-body); cursor:pointer; border:none;}
   background:var(--card); border-radius:26px; padding:26px 28px; box-shadow:var(--shadow);
   font-family:var(--font-display); font-size:1.5rem; line-height:1.4; max-width:520px;
   position:relative;
+  animation:fadeInUp .35s ease both;
 }
+@keyframes fadeInUp{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 .ai-bubble.thinking{color:var(--ink-faint); font-style:italic;}
 .pulse-ring{width:16px; height:16px; border-radius:50%; background:var(--sage);}
 .user-live{display:none;}
@@ -171,6 +173,44 @@ table.vartable{width:100%; border-collapse:collapse; font-size:.88rem;}
 table.vartable th, table.vartable td{text-align:left; padding:8px 6px; border-bottom:1px solid var(--paper-dim);}
 table.vartable th{color:var(--ink-soft); font-weight:600;}
 .small-note{color:var(--ink-faint); font-size:.8rem; margin-top:10px;}
+
+/* ---------- MODAL DE BIENVENIDA ---------- */
+.modal-overlay{display:none; position:fixed; inset:0; background:rgba(31,58,61,0.55); z-index:300; align-items:center; justify-content:center; padding:24px;}
+.modal-overlay.show{display:flex;}
+.modal-card{background:var(--card); border-radius:28px; padding:32px 28px; max-width:420px; width:100%; box-shadow:0 30px 80px rgba(31,58,61,0.32); text-align:left;}
+.modal-card h2{margin-top:6px;}
+.modal-sub{color:var(--ink-soft); font-size:.92rem; margin-bottom:6px; line-height:1.45;}
+.modal-label{display:block; font-size:.85rem; color:var(--ink-soft); font-weight:600; margin:16px 0 6px;}
+.modal-input{width:100%; padding:14px 16px; border-radius:14px; border:1.5px solid var(--sage-soft); font-size:1.05rem; font-family:var(--font-body);}
+
+/* ---------- NAVEGACIÓN INFERIOR ---------- */
+.bottom-nav{
+  display:none; position:fixed; left:0; right:0; bottom:0;
+  background:var(--card); border-top:1px solid var(--paper-dim);
+  padding:8px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+  justify-content:space-around; align-items:flex-start; gap:2px; z-index:100;
+  box-shadow:0 -6px 24px rgba(31,58,61,0.07);
+}
+.bottom-nav.show{display:flex;}
+.nav-item{background:none; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--ink-faint); font-size:.66rem; font-weight:600; padding:4px 4px; border-radius:12px; flex:1; min-width:0;}
+.nav-item svg{width:21px; height:21px; flex-shrink:0;}
+.nav-item span{white-space:nowrap;}
+.nav-item.active{color:var(--ink);}
+.app.nav-visible .view{padding-bottom:96px;}
+
+/* ---------- TARJETAS DE IMÁGENES (módulos identificación / memoria visual) ---------- */
+.image-stage{display:none; flex-wrap:wrap; gap:16px; justify-content:center; align-items:center; margin:6px 0;}
+.image-stage.show{display:flex; animation:fadeInUp .3s ease both;}
+.image-card{width:130px; height:130px; background:var(--tint, var(--paper-dim)); border-radius:24px; display:flex; align-items:center; justify-content:center; padding:20px; box-shadow:var(--shadow-soft); border:1.5px solid rgba(31,58,61,0.06);}
+
+/* ---------- MÓDULO DE CÁLCULO (alternativas) ---------- */
+.choice-stage{display:none; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:8px auto 0;}
+.choice-stage.show{display:flex; animation:fadeInUp .3s ease both;}
+.choice-btn{background:var(--card); border:2px solid var(--sage-soft); border-radius:18px; padding:18px; font-size:1.4rem; font-weight:700; color:var(--ink); box-shadow:var(--shadow-soft); font-family:var(--font-display); transition:transform .12s ease, background .15s ease;}
+.choice-btn:active{transform:scale(0.97); background:var(--sage-soft);}
+.choice-repeat-btn{background:none; color:var(--ink-faint); text-decoration:underline; font-size:.88rem; padding:6px; margin-top:2px;}
+.image-card svg{width:100%; height:100%;}
+
 .back-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
 
 @media print{
@@ -181,6 +221,20 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
 </head>
 <body>
 <div class="app">
+
+  <!-- ============ BIENVENIDA (primera vez en este dispositivo) ============ -->
+  <div class="modal-overlay" id="onboardingModal">
+    <div class="modal-card">
+      <div class="home-eyebrow">Memoria AI</div>
+      <h2>Antes de comenzar</h2>
+      <p class="modal-sub">Cuéntenos quién va a conversar con la aplicación. Esta información se guarda en este dispositivo y queda disponible en el panel familiar y médico.</p>
+      <label class="modal-label" for="onbName">Nombre</label>
+      <input class="modal-input" id="onbName" type="text" placeholder="Ej: María González" autocomplete="off">
+      <label class="modal-label" for="onbAge">Edad</label>
+      <input class="modal-input" id="onbAge" type="number" min="18" max="120" placeholder="Ej: 74">
+      <button class="btn btn-primary btn-full" style="margin-top:20px" onclick="submitOnboarding()">Comenzar</button>
+    </div>
+  </div>
 
   <!-- ============ SPLASH ============ -->
   <section id="view-splash" class="view active" onclick="skipSplash()">
@@ -210,9 +264,6 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="home-links no-print">
-      <button class="link-ghost" onclick="showView('dashboard')">Panel familiar / médico</button>
-    </div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -224,6 +275,8 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
     <div class="conv-progress"><div class="conv-progress-fill" id="progressFill" style="width:0%"></div></div>
     <div class="conv-body">
       <div class="ai-bubble" id="aiBubble">Preparando la conversación…</div>
+      <div class="image-stage" id="imageStage"></div>
+      <div class="choice-stage" id="choiceStage"></div>
       <div class="user-live" id="userLive"></div>
     </div>
     <div class="conv-bottom">
@@ -245,7 +298,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
     <p class="small-note" id="summaryDate"></p>
     <div class="summary-score" id="scoreRing" style="--pct:0">
       <div class="summary-score-num" id="scoreNum">--</div>
-      <div class="summary-score-label">Índice cognitivo</div>
+      <div class="summary-score-label" id="scoreLabel">Índice cognitivo</div>
     </div>
     <div class="alert-banner" id="alertBanner"></div>
     <div class="metric-grid" id="metricGrid"></div>
@@ -267,6 +320,26 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
     <div id="dashContent"></div>
   </section>
 
+  <!-- ============ NAVEGACIÓN INFERIOR ============ -->
+  <nav class="bottom-nav no-print" id="bottomNav">
+    <button class="nav-item active" id="navHome" onclick="navTo('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+      <span>Conversar</span>
+    </button>
+    <button class="nav-item" id="navCalculo" onclick="navTo('calculo')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><circle cx="8" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="16" r="1"/><circle cx="12" cy="16" r="1"/><circle cx="16" cy="16" r="1"/></svg>
+      <span>Cálculo</span>
+    </button>
+    <button class="nav-item" id="navMemoriaVisual" onclick="navTo('memoria_visual')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Memoria</span>
+    </button>
+    <button class="nav-item" id="navFamilia" onclick="navTo('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-3.6 3.6-6.5 8-6.5s8 2.9 8 6.5"/></svg>
+      <span>Familia</span>
+    </button>
+  </nav>
+
 </div>
 
 <script>
@@ -275,72 +348,183 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
 ========================================================= */
 const STORE_KEY = 'memoria-sessions';
 const NAME_KEY = 'memoria-user-name';
+const MODULE_RUNS_KEY = 'memoria-module-runs';
 let userName = '';  // sin valor predefinido: se pide la primera vez que se abre la app
+let userAge = null; // se pide junto con el nombre, la primera vez
 let sessions = [];
+let moduleRuns = []; // ejercicios sueltos (Cálculo/Memoria visual) lanzados desde la barra inferior
 
-/* Guardado en el dispositivo (localStorage del navegador), para que la app recuerde
-   el nombre y el historial de conversaciones cada vez que se abre, sin depender de
-   ningún servidor. */
+const FAMILY_KEY = 'memoria-family-info';
+
+let onboardingComplete = false; // solo true si hay nombre Y edad guardados juntos (FAMILY_KEY)
+
 function loadStorage(){
   try{
-    const savedName = localStorage.getItem(NAME_KEY);
-    if(savedName) userName = savedName;
+    const raw = localStorage.getItem(FAMILY_KEY);
+    if(raw){
+      const info = JSON.parse(raw);
+      if(info && info.name){
+        userName = info.name;
+        userAge = info.age || null;
+        if(userAge) onboardingComplete = true; // ya se completó el cuadro de nombre + edad
+      }
+    }
+    if(!onboardingComplete){
+      // compatibilidad con una versión anterior que solo guardaba el nombre suelto:
+      // precargamos el nombre, pero igual mostramos el cuadro para pedir la edad.
+      const savedName = localStorage.getItem(NAME_KEY);
+      if(savedName && !userName) userName = savedName;
+    }
   }catch(e){ /* localStorage no disponible (modo privado muy restrictivo, etc.) */ }
   try{
     const raw = localStorage.getItem(STORE_KEY);
     if(raw) sessions = JSON.parse(raw);
   }catch(e){ sessions = []; }
+  try{
+    const rawRuns = localStorage.getItem(MODULE_RUNS_KEY);
+    if(rawRuns) moduleRuns = JSON.parse(rawRuns);
+  }catch(e){ moduleRuns = []; }
 }
 function saveSessions(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(sessions)); }
   catch(e){ console.error('No se pudo guardar la sesión', e); }
 }
-function saveName(){
-  try{ localStorage.setItem(NAME_KEY, userName); }catch(e){}
+function saveModuleRuns(){
+  try{ localStorage.setItem(MODULE_RUNS_KEY, JSON.stringify(moduleRuns)); }
+  catch(e){ console.error('No se pudo guardar el ejercicio', e); }
+}
+function saveFamilyInfo(){
+  try{
+    localStorage.setItem(FAMILY_KEY, JSON.stringify({ name:userName, age:userAge, updatedAt:new Date().toISOString() }));
+  }catch(e){}
 }
 
-/* Primera vez que se abre la app en este dispositivo: pide el nombre y lo recuerda para siempre. */
-function ensureName(){
-  if(userName) return;
-  let val = null;
-  while(!val){
-    val = prompt('Bienvenido/a a Memoria AI. ¿Cómo le gustaría que la llamemos?');
-    if(val && val.trim()) val = val.trim();
-    else if(val === null){ val = 'Usuario'; break; } // la persona canceló el cuadro de diálogo
-    else val = null;
+/* Primera vez que se abre la app en este dispositivo (o si falta la edad): pide
+   nombre y edad con un cuadro del mismo estilo visual de la plataforma. */
+function needsOnboarding(){ return !onboardingComplete; }
+function showOnboarding(){
+  if(userName) document.getElementById('onbName').value = userName; // precarga si ya había un nombre suelto
+  document.getElementById('onboardingModal').classList.add('show');
+}
+function hideOnboarding(){ document.getElementById('onboardingModal').classList.remove('show'); }
+function submitOnboarding(){
+  const nameVal = document.getElementById('onbName').value.trim();
+  const ageVal = document.getElementById('onbAge').value.trim();
+  if(!nameVal){ document.getElementById('onbName').focus(); return; }
+  userName = nameVal;
+  userAge = ageVal ? parseInt(ageVal, 10) : null;
+  onboardingComplete = true;
+  saveFamilyInfo();
+  hideOnboarding();
+  renderHome();
+}
+
+/* Permite corregir el nombre después, desde el enlace "Cambiar nombre" del inicio. */
+function editName(){
+  const val = prompt('¿Cómo le gustaría que la llamemos?', userName);
+  if(val && val.trim()){
+    userName = val.trim();
+    saveFamilyInfo();
+    renderHome();
   }
-  userName = val;
-  saveName();
 }
 
 /* =========================================================
    MÓDULOS DE CONVERSACIÓN
 ========================================================= */
 const MODULES = [
-  {id:'saludo', titulo:'Saludo', goal:'Saluda con calidez a {name} y pregúntale cómo amaneció o cómo se siente en este momento.'},
-  {id:'rutina', titulo:'Rutina de hoy', goal:'Pregunta de forma natural qué desayunó y qué planes tiene para el resto del día.'},
-  {id:'memoria_reciente', titulo:'Memoria reciente', goal:'Pregunta con naturalidad qué almorzó ayer, o quién la llamó o visitó esta semana.'},
-  {id:'orientacion', titulo:'Orientación', goal:'Pregunta de forma casual qué día de la semana es hoy y en qué ciudad o lugar se encuentra.'},
-  {id:'atencion_fijacion', titulo:'Atención', goal:'Menciona con naturalidad tres palabras para que las recuerde más tarde en la charla: Casa, Flor y Perro. Pídele que las repita ahora mismo, como un juego, no como examen.'},
-  {id:'lenguaje', titulo:'Lenguaje', goal:'Pídele, con curiosidad genuina, que cuente paso a paso cómo prepararía un té o un café.'},
-  {id:'ejecutivas', titulo:'Resolviendo problemas', goal:'Plantea con tono ligero: si se cortara la luz en la casa ahora mismo, ¿qué haría primero?'},
-  {id:'narracion', titulo:'Un recuerdo', goal:'Pide con cariño que cuente algún recuerdo bonito de su infancia o juventud.'},
-  {id:'atencion_recuerdo', titulo:'Atención', goal:'Pregunta, como si fuera curiosidad, si recuerda las tres palabras que mencionaste antes (Casa, Flor, Perro), sin repetírselas.'},
-  {id:'despedida', titulo:'Despedida', goal:'Agradece la conversación con calidez genuina y despídete hasta la próxima charla.'}
+  {id:'saludo', titulo:'Saludo', type:'conversacional', goal:'Saluda con calidez a {name} y pregúntale cómo amaneció o cómo se siente en este momento.'},
+  {id:'rutina', titulo:'Rutina de hoy', type:'conversacional', goal:'Pregunta de forma natural qué desayunó y qué planes tiene para el resto del día.'},
+  {id:'memoria_reciente', titulo:'Memoria reciente', type:'conversacional', goal:'Pregunta con naturalidad qué almorzó ayer, o quién la llamó o visitó esta semana.'},
+  {id:'orientacion', titulo:'Orientación', type:'conversacional', goal:'Pregunta de forma casual qué día de la semana es hoy y en qué ciudad o lugar se encuentra.'},
+  {id:'atencion_fijacion', titulo:'Atención', type:'conversacional', goal:'Menciona con naturalidad tres palabras para que las recuerde más tarde en la charla: Casa, Flor y Perro. Pídele que las repita ahora mismo, como un juego, no como examen.'},
+  {id:'lenguaje', titulo:'Lenguaje', type:'conversacional', goal:'Pídele, con curiosidad genuina, que cuente paso a paso cómo prepararía un té o un café.'},
+  {id:'ejecutivas', titulo:'Resolviendo problemas', type:'conversacional', goal:'Plantea con tono ligero: si se cortara la luz en la casa ahora mismo, ¿qué haría primero?'},
+  {id:'narracion', titulo:'Un recuerdo', type:'conversacional', goal:'Pide con cariño que cuente algún recuerdo bonito de su infancia o juventud.'},
+  {id:'atencion_recuerdo', titulo:'Atención', type:'conversacional', goal:'Pregunta, como si fuera curiosidad, si recuerda las tres palabras que mencionaste antes (Casa, Flor, Perro), sin repetírselas.'},
+  {id:'calculo', titulo:'Cálculo', type:'calculo'},
+  {id:'memoria_visual', titulo:'Memoria visual', type:'memoria_visual'},
+  {id:'despedida', titulo:'Despedida', type:'conversacional', goal:'Agradece la conversación con calidez genuina y despídete hasta la próxima charla.'}
 ];
 
 const FALLBACK_LINES = {
-  saludo: `Buenos días, {name}. ¿Cómo amaneció hoy?`,
-  rutina: `Cuénteme, ¿qué desayunó esta mañana? ¿Tiene algún plan para hoy?`,
-  memoria_reciente: `¿Qué almorzó ayer? ¿La llamó o la visitó alguien esta semana?`,
+  saludo: `Qué gusto conversar con usted, {name}. ¿Cómo amaneció hoy?`,
+  rutina: `Cuénteme, con calma, ¿qué desayunó esta mañana? ¿Tiene algún plan lindo para hoy?`,
+  memoria_reciente: `¿Qué almorzó ayer? ¿La llamó o la visitó alguien querido esta semana?`,
   orientacion: `Se me fue el hilo por un momento… ¿qué día de la semana es hoy? ¿Y dónde estamos?`,
-  atencion_fijacion: `Le voy a decir tres palabras para que las recuerde más tarde: Casa, Flor y Perro. ¿Me las repite ahora?`,
-  lenguaje: `Tengo ganas de tomar un té. ¿Me cuenta paso a paso cómo lo prepararía?`,
+  atencion_fijacion: `Le voy a decir tres palabras para que las recuerde más tarde: Casa, Flor y Perro. ¿Me las repite ahora, por favor?`,
+  lenguaje: `Tengo ganas de tomar un té. ¿Me cuenta con calma cómo lo prepararía?`,
   ejecutivas: `Imagínese que de repente se corta la luz en su casa. ¿Qué haría primero?`,
-  narracion: `Cuénteme algún recuerdo bonito de su infancia o de cuando era joven.`,
-  atencion_recuerdo: `Antes le mencioné tres palabras. ¿Se acuerda cuáles eran?`,
-  despedida: `Fue muy lindo conversar con usted, {name}. Que tenga un excelente día. ¡Hasta la próxima charla!`
+  narracion: `Cuénteme algún recuerdo bonito de su infancia o de cuando era joven, me encanta escucharla.`,
+  atencion_recuerdo: `Antes le mencioné tres palabras con cariño. ¿Se acuerda cuáles eran?`,
+  despedida: `Fue realmente lindo conversar con usted, {name}. Que tenga un día precioso. La espero con cariño en nuestra próxima charla.`
 };
+
+/* =========================================================
+   ÍCONOS (dibujados en SVG, originales — sin imágenes externas)
+   Usados por los módulos "Identificación de imágenes" y "Memoria visual".
+========================================================= */
+const ICONS = {
+  perro:      {label:'perro',       categoria:'animales',    alias:['perrito'], tint:'#F4E9D6',
+    svg:`<svg viewBox="0 0 100 100"><ellipse cx="44" cy="66" rx="27" ry="17" fill="#B9834A"/><circle cx="72" cy="48" r="17" fill="#B9834A"/><path d="M60 36 L52 18 L68 30 Z" fill="#B9834A"/><path d="M84 36 L96 22 L86 40 Z" fill="#B9834A"/><ellipse cx="80" cy="54" rx="7" ry="5" fill="#F4E9D6"/><circle cx="78" cy="45" r="2.6" fill="#2A211A"/><circle cx="60" cy="48" r="2" fill="#2A211A"/><path d="M16 62 Q4 54 10 40" stroke="#B9834A" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M30 82 L30 92 M40 82 L40 92 M56 84 L56 94 M66 84 L66 94" stroke="#8A5F31" stroke-width="6" stroke-linecap="round"/></svg>`},
+  gato:       {label:'gato',        categoria:'animales',    alias:[], tint:'#F4E9D6',
+    svg:`<svg viewBox="0 0 100 100"><ellipse cx="46" cy="68" rx="25" ry="15" fill="#7C7A78"/><circle cx="70" cy="46" r="16" fill="#7C7A78"/><path d="M58 32 L50 14 L66 26 Z" fill="#7C7A78"/><path d="M82 32 L94 16 L84 30 Z" fill="#7C7A78"/><ellipse cx="76" cy="52" rx="6" ry="4.5" fill="#EFEEED"/><circle cx="74" cy="44" r="2.4" fill="#2A211A"/><circle cx="58" cy="46" r="2" fill="#2A211A"/><line x1="58" y1="52" x2="42" y2="49" stroke="#2A211A" stroke-width="1.4"/><line x1="58" y1="56" x2="42" y2="58" stroke="#2A211A" stroke-width="1.4"/><path d="M24 78 Q10 74 12 58" stroke="#7C7A78" stroke-width="7" fill="none" stroke-linecap="round"/></svg>`},
+  pajaro:     {label:'pájaro',      categoria:'animales',    alias:['ave'], tint:'#F4E9D6',
+    svg:`<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="26" ry="20" fill="#3E8FA6"/><circle cx="76" cy="42" r="13" fill="#3E8FA6"/><path d="M89 42 L100 46 L89 51 Z" fill="#E0A23E"/><path d="M32 56 Q10 50 18 72 Q34 70 42 58 Z" fill="#2E6F82"/><circle cx="80" cy="39" r="2.2" fill="#1A2A2E"/><path d="M50 78 Q52 88 58 90 M50 78 Q46 88 40 90" stroke="#E0A23E" stroke-width="3" stroke-linecap="round" fill="none"/></svg>`},
+  pez:        {label:'pez',         categoria:'animales',    alias:['pescado'], tint:'#F4E9D6',
+    svg:`<svg viewBox="0 0 100 100"><ellipse cx="46" cy="50" rx="32" ry="19" fill="#3E7FA6"/><path d="M78 50 L96 32 L94 50 L96 68 Z" fill="#3E7FA6"/><path d="M40 32 Q46 20 56 20 Q50 34 48 38 Z" fill="#2E5F82"/><circle cx="28" cy="45" r="3" fill="#0E1A1E"/><path d="M20 50 Q34 44 46 50 Q34 56 20 50Z" fill="#7FB8D6" opacity="0.6"/></svg>`},
+  llave:      {label:'llave',       categoria:'objetos',     alias:[], tint:'#E9EEF4',
+    svg:`<svg viewBox="0 0 100 100"><circle cx="30" cy="50" r="17" fill="none" stroke="#5B7C99" stroke-width="8"/><circle cx="30" cy="50" r="5" fill="#E9EEF4"/><rect x="44" y="46" width="46" height="9" fill="#5B7C99"/><rect x="70" y="55" width="8" height="14" fill="#5B7C99"/><rect x="82" y="55" width="8" height="18" fill="#5B7C99"/></svg>`},
+  reloj:      {label:'reloj',       categoria:'objetos',     alias:[], tint:'#E9EEF4',
+    svg:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#F7F4EC" stroke="#5B7C99" stroke-width="6"/><line x1="50" y1="22" x2="50" y2="28" stroke="#5B7C99" stroke-width="3"/><line x1="50" y1="72" x2="50" y2="78" stroke="#5B7C99" stroke-width="3"/><line x1="22" y1="50" x2="28" y2="50" stroke="#5B7C99" stroke-width="3"/><line x1="72" y1="50" x2="78" y2="50" stroke="#5B7C99" stroke-width="3"/><line x1="50" y1="50" x2="50" y2="28" stroke="#2A211A" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="50" x2="68" y2="58" stroke="#2A211A" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="50" r="4.5" fill="#C1743C"/></svg>`},
+  telefono:   {label:'teléfono',    categoria:'objetos',     alias:['celular'], tint:'#E9EEF4',
+    svg:`<svg viewBox="0 0 100 100"><rect x="28" y="10" width="44" height="80" rx="11" fill="#3A4750"/><rect x="33" y="20" width="34" height="54" rx="2" fill="#8FD3E8"/><circle cx="50" cy="82" r="4" fill="#EFEEED"/><circle cx="58" cy="16" r="1.6" fill="#0E1A1E"/></svg>`},
+  silla:      {label:'silla',       categoria:'objetos',     alias:[], tint:'#E9EEF4',
+    svg:`<svg viewBox="0 0 100 100"><rect x="26" y="14" width="10" height="42" rx="3" fill="#8A5F31"/><rect x="26" y="20" width="48" height="8" rx="2" fill="#8A5F31"/><rect x="26" y="34" width="48" height="8" rx="2" fill="#8A5F31"/><rect x="26" y="48" width="48" height="10" rx="3" fill="#B9834A"/><rect x="30" y="58" width="8" height="30" fill="#5B7C99"/><rect x="66" y="58" width="8" height="30" fill="#5B7C99"/></svg>`},
+  manzana:    {label:'manzana',     categoria:'frutas',      alias:[], tint:'#FBEBE3',
+    svg:`<svg viewBox="0 0 100 100"><path d="M50 34 C34 30 22 42 22 58 C22 74 34 86 48 86 C50 86 50 84 52 84 C54 84 54 86 56 86 C70 86 82 74 82 58 C82 40 68 30 54 36 Z" fill="#C1483C"/><path d="M50 34 Q48 22 58 16" stroke="#6B4A2A" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M58 22 Q70 14 76 26 Q64 30 58 22Z" fill="#4C8C6E"/></svg>`},
+  platano:    {label:'plátano',     categoria:'frutas',      alias:['banana'], tint:'#FBEBE3',
+    svg:`<svg viewBox="0 0 100 100"><path d="M18 68 Q24 28 64 16 Q76 13 80 22 Q74 24 70 28 Q56 32 42 60 Q34 78 16 76 Q14 72 18 68Z" fill="#E3B23E"/><path d="M64 16 Q72 12 78 18" stroke="#8A6A1E" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`},
+  naranja:    {label:'naranja',     categoria:'frutas',      alias:[], tint:'#FBEBE3',
+    svg:`<svg viewBox="0 0 100 100"><circle cx="50" cy="55" r="32" fill="#E38A3E"/><circle cx="50" cy="55" r="32" fill="none" stroke="#C96F2A" stroke-width="1.5" opacity="0.4"/><path d="M50 23 Q47 14 55 9" stroke="#4C8C6E" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="60" cy="14" rx="8" ry="5" fill="#4C8C6E" transform="rotate(30 60 14)"/></svg>`},
+  uva:        {label:'uva',         categoria:'frutas',      alias:['uvas'], tint:'#FBEBE3',
+    svg:`<svg viewBox="0 0 100 100"><circle cx="40" cy="42" r="12" fill="#7C5FA6"/><circle cx="60" cy="42" r="12" fill="#7C5FA6"/><circle cx="50" cy="60" r="12" fill="#7C5FA6"/><circle cx="32" cy="60" r="12" fill="#8E71B8"/><circle cx="68" cy="60" r="12" fill="#8E71B8"/><circle cx="50" cy="78" r="12" fill="#7C5FA6"/><path d="M50 28 L50 12" stroke="#4C8C6E" stroke-width="3"/><path d="M50 14 Q58 10 62 16" stroke="#4C8C6E" stroke-width="3" fill="none"/></svg>`},
+  martillo:   {label:'martillo',    categoria:'herramientas',alias:[], tint:'#ECEAE4',
+    svg:`<svg viewBox="0 0 100 100"><rect x="42" y="38" width="13" height="54" rx="5" fill="#8A5F31"/><path d="M20 14 H72 a10 10 0 0 1 10 10 v8 a10 10 0 0 1 -10 10 H20 a10 10 0 0 1 -6-18 Z" fill="#6B6558"/><rect x="20" y="14" width="62" height="28" rx="8" fill="#6B6558"/></svg>`},
+  destornillador:{label:'destornillador', categoria:'herramientas', alias:[], tint:'#ECEAE4',
+    svg:`<svg viewBox="0 0 100 100"><rect x="45" y="8" width="10" height="44" fill="#9CA3A8"/><rect x="45" y="8" width="10" height="10" fill="#5B7C99"/><rect x="33" y="50" width="34" height="38" rx="10" fill="#C1743C"/><rect x="33" y="50" width="34" height="8" fill="#8A4E23"/></svg>`},
+  tijeras:    {label:'tijeras',     categoria:'herramientas',alias:[], tint:'#ECEAE4',
+    svg:`<svg viewBox="0 0 100 100"><circle cx="24" cy="72" r="11" fill="none" stroke="#C1743C" stroke-width="6"/><circle cx="24" cy="28" r="11" fill="none" stroke="#C1743C" stroke-width="6"/><path d="M33 64 L90 20 L82 18 Z" fill="#9CA3A8"/><path d="M33 36 L90 80 L82 82 Z" fill="#9CA3A8"/></svg>`},
+  auto:       {label:'auto',        categoria:'vehiculos',   alias:['carro','coche'], tint:'#E8EEF6',
+    svg:`<svg viewBox="0 0 100 100"><rect x="12" y="48" width="76" height="24" rx="9" fill="#3E6FA6"/><path d="M26 48 L36 26 L68 26 L78 48 Z" fill="#3E6FA6"/><rect x="30" y="30" width="16" height="16" rx="2" fill="#BFE0F0"/><rect x="50" y="30" width="16" height="16" rx="2" fill="#BFE0F0"/><circle cx="30" cy="74" r="10" fill="#2A211A"/><circle cx="30" cy="74" r="4" fill="#9CA3A8"/><circle cx="70" cy="74" r="10" fill="#2A211A"/><circle cx="70" cy="74" r="4" fill="#9CA3A8"/></svg>`},
+  bicicleta:  {label:'bicicleta',   categoria:'vehiculos',   alias:['bici'], tint:'#E8EEF6',
+    svg:`<svg viewBox="0 0 100 100"><circle cx="24" cy="72" r="17" fill="none" stroke="#2A211A" stroke-width="4"/><circle cx="76" cy="72" r="17" fill="none" stroke="#2A211A" stroke-width="4"/><path d="M24 72 L46 34 L64 34 L76 72 M46 34 L60 72 M38 50 L66 50" stroke="#3E8F8A" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M60 34 L68 22 L78 22" stroke="#3E8F8A" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="20" y="30" width="14" height="6" rx="3" fill="#2A211A"/></svg>`},
+  avion:      {label:'avión',       categoria:'vehiculos',   alias:[], tint:'#E8EEF6',
+    svg:`<svg viewBox="0 0 100 100"><path d="M8 54 L60 50 L46 40 L30 40 L20 24 L28 24 L44 40 L60 40 L60 20 L68 20 L72 40 L92 46 L92 54 L72 58 L68 80 L60 80 L60 58 L44 58 L28 76 L20 76 L30 58 L8 54Z" fill="#5B6B7A"/></svg>`},
+  bus:        {label:'bus',         categoria:'vehiculos',   alias:['autobús','autobus'], tint:'#E8EEF6',
+    svg:`<svg viewBox="0 0 100 100"><rect x="12" y="22" width="76" height="48" rx="10" fill="#C1743C"/><rect x="20" y="30" width="16" height="14" fill="#F4E9D6"/><rect x="42" y="30" width="16" height="14" fill="#F4E9D6"/><rect x="64" y="30" width="16" height="14" fill="#F4E9D6"/><rect x="12" y="50" width="76" height="8" fill="#8A4E23"/><circle cx="30" cy="76" r="9" fill="#2A211A"/><circle cx="70" cy="76" r="9" fill="#2A211A"/></svg>`}
+};
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+/* Evita que se repita una misma imagen dentro del módulo de Memoria visual
+   (entre la tanda mostrada y la imagen nueva de la ronda de reconocimiento).
+   Se reinicia al empezar cada conversación o ejercicio suelto nuevo. */
+let usedIconKeys = new Set();
+function pickUnusedIcons(n, excludeKeys){
+  excludeKeys = excludeKeys || new Set();
+  let disponibles = Object.entries(ICONS).filter(([k])=>!usedIconKeys.has(k) && !excludeKeys.has(k));
+  if(disponibles.length < n){
+    // si ya se usaron casi todos los íconos del set, se completa igual evitando
+    // al menos los ya elegidos en esta misma ronda (excludeKeys)
+    disponibles = Object.entries(ICONS).filter(([k])=>!excludeKeys.has(k));
+  }
+  const elegidos = shuffleArray(disponibles).slice(0, n);
+  elegidos.forEach(([k])=>usedIconKeys.add(k));
+  return elegidos;
+}
 
 /* =========================================================
    RECONOCIMIENTO Y SÍNTESIS DE VOZ
@@ -354,6 +538,76 @@ function refreshVoices(){ cachedVoices = window.speechSynthesis.getVoices(); }
 if('speechSynthesis' in window){
   refreshVoices();
   window.speechSynthesis.onvoiceschanged = refreshVoices;
+}
+
+/* ==== Voz ElevenLabs (opcional, mucho más natural que la del navegador) ====
+   Para activarla: crea una cuenta en https://elevenlabs.io, saca tu API key
+   (Profile → API Keys) y pega abajo el ID de una voz. Si se deja vacío, la app
+   sigue funcionando igual que antes con la voz del navegador — no se rompe nada.
+
+   IMPORTANTE PARA QUE SEA ESPAÑOL LATINO: el acento queda grabado en la voz
+   misma, no se puede forzar solo con código. En la Voice Library de ElevenLabs
+   (elevenlabs.io/app/voice-library), filtra por idioma "Spanish" y busca voces
+   descritas como "Latin American", "Mexican", "Chilean", "Colombian", etc.
+   (evita las que digan "Castilian"/"European Spanish", que son de España).
+   Muchas cuentas ya traen por defecto una voz así en su biblioteca ("Rosa" o
+   similar); si no aparece ninguna, usa el buscador de la librería con esos
+   filtros y agrégala a tu cuenta con "Add to my voices" antes de copiar su ID.
+
+   ADVERTENCIA DE SEGURIDAD IMPORTANTE: como este es un archivo único que corre
+   entero en el navegador de quien lo usa, cualquier persona puede ver esta API
+   key abriendo el código fuente de la página, y gastar tu cuota de ElevenLabs.
+   Para un prototipo o uso interno/controlado esto suele ser aceptable, pero
+   para un lanzamiento público real lo correcto es mover esta llamada a un
+   pequeño backend (o función serverless) que guarde la key de forma privada
+   y la app le pida el audio a ese backend en vez de llamar a ElevenLabs directo.
+   Cuando lleguemos a esa etapa del proyecto, lo dejamos armado. */
+const ELEVEN_API_KEY   = '';  // ← pega aquí tu API key de ElevenLabs
+const ELEVEN_VOICE_ID  = '';  // ← pega aquí el ID de una voz en español LATINO (ver guía arriba)
+const ELEVEN_MODEL_ID  = 'eleven_turbo_v2_5'; // modelo multilingüe optimizado para baja latencia = conversación más fluida
+                                               // (si prefieres priorizar calidad sobre velocidad, cambia a 'eleven_multilingual_v2')
+
+async function speakElevenLabs(text){
+  if(!ELEVEN_API_KEY || !ELEVEN_VOICE_ID) return false; // no configurado: usar voz del navegador
+  try{
+    // Se usa el endpoint de streaming (?optimize_streaming_latency) para que el audio
+    // empiece a llegar antes, en vez de esperar a que se genere la frase completa:
+    // eso es lo que hace que la conversación se sienta fluida y no con un silencio raro
+    // entre la pregunta y la respuesta hablada.
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}/stream?optimize_streaming_latency=3`, {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'xi-api-key': ELEVEN_API_KEY,
+        'Accept':'audio/mpeg'
+      },
+      body: JSON.stringify({
+        text,
+        model_id: ELEVEN_MODEL_ID,
+        language_code: 'es', // ayuda al modelo a mantener la pronunciación en español
+        apply_text_normalization: 'auto', // pronuncia mejor números, fechas y horas ("15:30" → "quince treinta")
+        // stability moderada = pronunciación confiable pero sin sonar plana; style algo más
+        // alto = más calidez y expresividad emocional, cercana a como hablaría una persona
+        // afectuosa de verdad. Si en algún momento se siente demasiado cambiante, sube stability.
+        // Si igual notas alguna palabra puntual mal pronunciada, ElevenLabs permite crear un
+        // "Pronunciation Dictionary" en el dashboard de tu cuenta para corregir esa palabra específica.
+        voice_settings:{ stability:0.48, similarity_boost:0.85, style:0.5, use_speaker_boost:true }
+      })
+    });
+    if(!res.ok) throw new Error('ElevenLabs respondió '+res.status);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    await new Promise(resolve=>{
+      const audio = new Audio(url);
+      audio.onended = ()=>{ URL.revokeObjectURL(url); resolve(); };
+      audio.onerror = ()=>{ URL.revokeObjectURL(url); resolve(); };
+      audio.play().catch(()=>{ URL.revokeObjectURL(url); resolve(); });
+    });
+    return true;
+  }catch(e){
+    console.warn('ElevenLabs no disponible, uso la voz del navegador como respaldo:', e);
+    return false;
+  }
 }
 
 /* Elige la mejor voz en español disponible en el navegador/dispositivo, priorizando
@@ -381,7 +635,7 @@ function pickLatamVoice(){
   return scored[0].voice;
 }
 
-function speak(text){
+function speakBrowserTTS(text){
   return new Promise(resolve=>{
     try{
       window.speechSynthesis.cancel();
@@ -397,8 +651,8 @@ function speak(text){
         if(i >= queue.length){ resolve(); return; }
         const u = new SpeechSynthesisUtterance(queue[i]);
         u.lang = 'es-CL';
-        u.rate = 0.94 + Math.random()*0.08;   // ~0.94–1.02, leve variación natural de ritmo
-        u.pitch = 0.97 + Math.random()*0.06;  // ~0.97–1.03, leve variación natural de tono
+        u.rate = 0.90 + Math.random()*0.07;   // ~0.90–0.97, ritmo pausado y cálido
+        u.pitch = 0.94 + Math.random()*0.06;  // ~0.94–1.00, tono algo más grave y afectuoso
         u.volume = 1.0;
         if(voice) u.voice = voice;
         const esUltima = i>=queue.length-1;
@@ -411,6 +665,14 @@ function speak(text){
       speakNext();
     }catch(e){ resolve(); }
   });
+}
+
+/* Punto de entrada único para hablar: intenta primero ElevenLabs (voz natural);
+   si no está configurado o falla, usa automáticamente la voz del navegador. */
+async function speak(text){
+  const ok = await speakElevenLabs(text);
+  if(ok) return;
+  return speakBrowserTTS(text);
 }
 
 /* Escucha automática afinada para adultos mayores: el micrófono se activa solo apenas
@@ -576,6 +838,11 @@ const SYSTEM_PROMPT = `Eres la voz de Memoria AI, una compañía conversacional 
 Hablas en español latinoamericano (chileno), tratando a {name} de usted con cariño, como alguien que realmente disfruta conversar, nunca como un examen ni una entrevista clínica.
 Reglas estrictas de idioma:
 - Usa SIEMPRE español latinoamericano/chileno. Nunca uses "vosotros", "vale", "coger", "ordenador" ni otros modismos de España.
+Reglas de calidez:
+- Habla como una persona cercana y afectuosa que disfruta genuinamente cada cosa que {name} cuenta, no como un asistente neutro.
+- Usa un tono suave, pausado y cálido, con pequeños gestos verbales de cariño cuando sea natural (por ejemplo, un "qué bonito", "me encanta escuchar eso", "cuénteme más" dicho con calidez, sin sobreactuar ni repetir siempre la misma frase).
+- Nunca apures a {name} ni la hagas sentir evaluada. Si algo no quedó claro, pregúntalo con paciencia y ternura, nunca con impaciencia.
+- Varía tus reacciones para que no suenen repetitivas de un turno a otro; una persona real no dice siempre las mismas muletillas.
 Reglas de forma:
 - Responde SOLO con la próxima frase que dirías en voz alta. Nada de explicaciones, nada de comillas, nada de etiquetas.
 - Máximo 2 frases cortas, tono natural, cálido y pausado.
@@ -665,13 +932,17 @@ function analyzeTranscript(turns){
 ========================================================= */
 let currentTurns = [];
 let currentModuleIndex = 0;
+let moduleScores = { calculo:null, memoriaVisual:null };
 
 async function startConversation(){
   currentTurns = [];
   currentModuleIndex = 0;
+  moduleScores = { calculo:null, memoriaVisual:null };
+  usedIconKeys = new Set();
   showView('conversation');
+  setInputMode('voice');
+  resetModuleUI();
   document.getElementById('typeFallback').classList.remove('active');
-  document.getElementById('micBtn').style.display = 'flex';
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
   await runModule();
 }
@@ -682,8 +953,14 @@ async function runModule(){
     return;
   }
   const mod = MODULES[currentModuleIndex];
+  resetModuleUI(); // blindaje: nunca debe quedar nada de un módulo anterior visible al entrar a uno nuevo
   document.getElementById('modulePill').textContent = mod.titulo;
   document.getElementById('progressFill').style.width = Math.round((currentModuleIndex/MODULES.length)*100)+'%';
+
+  // Módulos especiales (cálculo, memoria visual): tienen su propio flujo,
+  // distinto del módulo conversacional guiado por la IA que sigue más abajo sin cambios.
+  if(mod.type==='calculo'){ await runCalculoModule(); currentModuleIndex++; await runModule(); return; }
+  if(mod.type==='memoria_visual'){ await runMemoriaVisualModule(); currentModuleIndex++; await runModule(); return; }
 
   const bubble = document.getElementById('aiBubble');
   bubble.classList.add('thinking');
@@ -722,26 +999,309 @@ async function runModule(){
   await runModule();
 }
 
+/* =========================================================
+   MÓDULO 2 — CÁLCULO BÁSICO (por alternativas, sin voz)
+========================================================= */
+function buildCalculoExercises(){
+  const a1=Math.floor(Math.random()*5)+2, b1=Math.floor(Math.random()*4)+2;
+  const a2=Math.floor(Math.random()*6)+5, b2=Math.floor(Math.random()*4)+2;
+  const a3=Math.floor(Math.random()*12)+8, b3=Math.floor(Math.random()*9)+3;
+  const a4=Math.floor(Math.random()*4)+2, b4=Math.floor(Math.random()*4)+2;
+  const dinero=Math.floor(Math.random()*6)+8, gasto=Math.floor(Math.random()*(dinero-2))+2;
+  return [
+    {prompt:`¿Cuánto es ${a1} más ${b1}?`, answer:a1+b1},
+    {prompt:`¿Cuánto es ${Math.max(a2,b2)} menos ${Math.min(a2,b2)}?`, answer:Math.max(a2,b2)-Math.min(a2,b2)},
+    {prompt:`¿Cuánto es ${a3} más ${b3}?`, answer:a3+b3},
+    {prompt:`¿Cuánto es ${a4} multiplicado por ${b4}?`, answer:a4*b4},
+    {prompt:`Si tiene ${dinero} mil pesos y gasta ${gasto} mil, ¿cuántos mil pesos le quedan?`, answer:dinero-gasto}
+  ];
+}
+function buildAlternativas(correcta){
+  const opciones = new Set([correcta]);
+  const deltas = shuffleArray([-3,-2,-1,1,2,3,4,-4]);
+  let i = 0;
+  while(opciones.size < 4 && i < deltas.length){
+    const candidata = correcta + deltas[i];
+    if(candidata >= 0) opciones.add(candidata);
+    i++;
+  }
+  while(opciones.size < 4) opciones.add(correcta + opciones.size + 1);
+  return shuffleArray([...opciones]);
+}
+/* Muestra las alternativas como botones grandes y espera a que la persona toque
+   una opción, o "Repetir pregunta" si necesita que se la vuelvan a leer. */
+function waitForChoiceOrRepeat(opciones){
+  return new Promise(resolve=>{
+    const stage = document.getElementById('choiceStage');
+    stage.innerHTML = opciones.map(op=>`<button class="choice-btn" data-val="${op}">${op}</button>`).join('')
+      + `<button class="choice-repeat-btn" id="choiceRepeatBtn" type="button">🔁 Repetir la pregunta</button>`;
+    stage.classList.add('show');
+    const handler = (ev)=>{
+      const answerBtn = ev.target.closest('.choice-btn');
+      const repeatBtn = ev.target.closest('#choiceRepeatBtn');
+      if(answerBtn){
+        stage.removeEventListener('click', handler);
+        resolve({type:'answer', value: parseInt(answerBtn.dataset.val, 10)});
+      }else if(repeatBtn){
+        stage.removeEventListener('click', handler);
+        resolve({type:'repeat'});
+      }
+    };
+    stage.addEventListener('click', handler);
+  });
+}
+function hideChoices(){
+  const stage = document.getElementById('choiceStage');
+  // Se reemplaza por un clon "limpio": así se eliminan de raíz tanto el contenido
+  // como cualquier escuchador de clics que hubiera quedado pegado de un intento
+  // anterior que no llegó a resolverse (por ejemplo, si se salió a mitad de una pregunta).
+  const limpio = stage.cloneNode(false);
+  limpio.classList.remove('show');
+  limpio.innerHTML = '';
+  stage.parentNode.replaceChild(limpio, stage);
+}
+/* Limpia cualquier resto visual de un módulo anterior (botones de alternativas de
+   Cálculo, tarjetas de imágenes de Memoria visual). Se llama siempre al
+   entrar o salir de un módulo, para que nunca quede contenido de un módulo distinto
+   pegado en pantalla — por ejemplo si la persona sale a mitad de un ejercicio. */
+function resetModuleUI(){
+  hideChoices();
+  hideImageOnScreen();
+}
+/* Oculta el micrófono y el modo escribir mientras se responde por alternativas (no se necesita voz),
+   y los vuelve a mostrar para el resto de los módulos que sí usan voz. */
+function setInputMode(mode){
+  const micBtn = document.getElementById('micBtn');
+  const micHint = document.getElementById('micHint');
+  const toggleBtn = document.getElementById('toggleTypeBtn');
+  if(mode==='choice'){
+    micBtn.style.display = 'none';
+    micHint.style.display = 'none';
+    toggleBtn.style.display = 'none';
+    document.getElementById('typeFallback').classList.remove('active');
+  }else{
+    micBtn.style.display = 'flex';
+    micHint.style.display = 'block';
+    toggleBtn.style.display = 'inline-block';
+  }
+}
+async function runCalculoModule(){
+  resetModuleUI();
+  const bubble = document.getElementById('aiBubble');
+  const exercises = buildCalculoExercises();
+  let correctas=0, repeticiones=0, totalTimeMs=0;
+  const detalle=[];
+
+  setInputMode('choice');
+  await speak(`Ahora hagamos unos ejercicios sencillos de cálculo, ${userName}. Le voy a leer la pregunta y usted toca la alternativa correcta. Tómese el tiempo que necesite.`);
+
+  for(let idx=0; idx<exercises.length; idx++){
+    const ex = exercises[idx];
+    const opciones = buildAlternativas(ex.answer);
+    bubble.textContent = ex.prompt;
+    await speak(ex.prompt);
+
+    let start = performance.now();
+    let result = await waitForChoiceOrRepeat(opciones);
+    let elapsed = performance.now()-start;
+
+    while(result.type==='repeat'){
+      repeticiones++;
+      hideChoices();
+      await speak('Le repito la pregunta con calma: '+ex.prompt);
+      start = performance.now();
+      result = await waitForChoiceOrRepeat(opciones);
+      elapsed = performance.now()-start;
+    }
+    hideChoices();
+
+    const respuesta = result.value;
+    const acierto = respuesta === ex.answer;
+    if(acierto) correctas++;
+    totalTimeMs += elapsed;
+    detalle.push({ prompt:ex.prompt, esperado:ex.answer, respuesta, opciones, acierto, tiempoSeg:Math.round(elapsed/1000) });
+  }
+
+  const exactitud = Math.round((correctas/exercises.length)*100);
+  const tiempoPromedioSeg = Math.round(totalTimeMs/exercises.length/1000);
+  const penalizacion = Math.min(20, repeticiones*7);
+  const puntaje = Math.max(0, Math.min(100, exactitud - penalizacion));
+
+  moduleScores.calculo = { puntaje, exactitud, correctas, total:exercises.length, tiempoPromedioSeg, repeticiones, detalle };
+  setInputMode('voice');
+  await speak('Muy bien, muchas gracias por resolver esos ejercicios conmigo.');
+}
+
+/* =========================================================
+   Funciones de despliegue de imágenes (usadas por el módulo de Memoria visual)
+========================================================= */
+function showImageOnScreen(entry){
+  const stage = document.getElementById('imageStage');
+  stage.innerHTML = `<div class="image-card" style="--tint:${entry.tint || 'var(--paper-dim)'}">${entry.svg}</div>`;
+  stage.classList.add('show');
+}
+function showImageGroupOnScreen(entries){
+  const stage = document.getElementById('imageStage');
+  stage.innerHTML = entries.map(([key,item])=>`<div class="image-card" style="--tint:${item.tint || 'var(--paper-dim)'}">${item.svg}</div>`).join('');
+  stage.classList.add('show');
+}
+function hideImageOnScreen(){
+  const stage = document.getElementById('imageStage');
+  stage.classList.remove('show');
+  stage.innerHTML = '';
+}
+
+/* =========================================================
+   MÓDULO 4 — MEMORIA VISUAL
+========================================================= */
+async function runMemoriaVisualModule(){
+  resetModuleUI();
+  const bubble = document.getElementById('aiBubble');
+  const mostradas = pickUnusedIcons(5);
+  const usadosEnEsteModulo = new Set(mostradas.map(([k])=>k));
+  const [nueva] = pickUnusedIcons(1, usadosEnEsteModulo);
+
+  await speak(`Ahora le voy a mostrar varias imágenes por unos segundos, ${userName}. Obsérvelas con calma.`);
+  bubble.textContent = 'Observe estas imágenes…';
+  showImageGroupOnScreen(mostradas);
+  await new Promise(r=>setTimeout(r, 6000));
+  hideImageOnScreen();
+
+  bubble.textContent = '¿Cuáles de esas imágenes recuerda haber visto?';
+  document.getElementById('userLive').textContent = '';
+  await speak('¿Cuáles de esas imágenes recuerda haber visto?');
+  const respRecall = await waitForUserTurn();
+  const lowRecall = (respRecall||'').toLowerCase();
+  let recordadas = 0;
+  mostradas.forEach(([k,item])=>{ if(lowRecall.includes(item.label.toLowerCase())) recordadas++; });
+
+  const grupoReconocimiento = shuffleArray([...shuffleArray(mostradas).slice(0,4), nueva]);
+  showImageGroupOnScreen(grupoReconocimiento);
+  bubble.textContent = 'De este nuevo grupo, ¿cuál imagen NO le mostré antes?';
+  document.getElementById('userLive').textContent = '';
+  await speak('De este nuevo grupo, ¿cuál imagen no le mostré antes?');
+  const respReconocimiento = await waitForUserTurn();
+  const lowReconocimiento = (respReconocimiento||'').toLowerCase();
+  const reconocioIntrusa = lowReconocimiento.includes(nueva[1].label.toLowerCase()) || (nueva[1].alias||[]).some(a=>lowReconocimiento.includes(a));
+  hideImageOnScreen();
+
+  const memoriaInmediataScore = Math.round((recordadas/mostradas.length)*100);
+  const reconocimientoScore = reconocioIntrusa ? 100 : 0;
+  const puntaje = Math.round(memoriaInmediataScore*0.6 + reconocimientoScore*0.4);
+
+  moduleScores.memoriaVisual = { puntaje, recordadas, totalMostradas:mostradas.length, reconocioIntrusa };
+  await speak('Muy bien, gracias por su atención.');
+}
+
 function endConversation(early){
   window.speechSynthesis.cancel();
   if(recognizer){ try{ recognizer.stop(); }catch(e){} }
+  resetModuleUI();
+  setInputMode('voice');
   if(early && currentTurns.length < 3){ showView('home'); return; }
   finishConversation();
 }
 
 async function finishConversation(){
   window.speechSynthesis.cancel();
+  resetModuleUI();
+  setInputMode('voice');
   const metrics = analyzeTranscript(currentTurns);
+
+  // El índice cognitivo final combina la conversación con los módulos especiales
+  // (cálculo, imágenes, memoria visual) cuando están disponibles.
+  const extraScores = [moduleScores.calculo, moduleScores.memoriaVisual]
+    .filter(Boolean).map(m=>m.puntaje);
+  let indiceFinal = metrics.indiceCognitivo;
+  if(extraScores.length){
+    const extraProm = extraScores.reduce((a,b)=>a+b,0)/extraScores.length;
+    indiceFinal = Math.round(metrics.indiceCognitivo*0.6 + extraProm*0.4);
+  }
+
   const session = {
     id: 'sess_' + Date.now(),
     date: new Date().toISOString(),
     userName,
+    userAge,
     ...metrics,
+    indiceCognitivo: indiceFinal,
+    calculo: moduleScores.calculo,
+    memoriaVisual: moduleScores.memoriaVisual,
     transcript: currentTurns
   };
   sessions.push(session);
   await saveSessions();
   renderSummary(session);
+  showView('summary');
+}
+
+/* =========================================================
+   MÓDULOS SUELTOS (lanzados desde la barra de navegación inferior)
+   Ejecutan un solo módulo (Cálculo / Memoria visual) fuera de la
+   conversación completa, y guardan el resultado en un registro aparte
+   (moduleRuns) para no mezclar un ejercicio puntual con la tendencia del
+   índice cognitivo de las conversaciones diarias completas.
+========================================================= */
+async function startStandaloneModule(type){
+  currentTurns = [];
+  currentModuleIndex = 0;
+  moduleScores = { calculo:null, memoriaVisual:null };
+  usedIconKeys = new Set();
+  showView('conversation');
+  setInputMode('voice');
+  resetModuleUI();
+  document.getElementById('typeFallback').classList.remove('active');
+  document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
+  document.getElementById('progressFill').style.width = '0%';
+
+  const titulos = {calculo:'Cálculo', memoria_visual:'Memoria visual'};
+  document.getElementById('modulePill').textContent = titulos[type] || 'Ejercicio';
+
+  if(type==='calculo') await runCalculoModule();
+  else if(type==='memoria_visual') await runMemoriaVisualModule();
+
+  document.getElementById('progressFill').style.width = '100%';
+  await finishStandaloneModule(type);
+}
+
+async function finishStandaloneModule(type){
+  window.speechSynthesis.cancel();
+  resetModuleUI();
+  setInputMode('voice');
+  let scoreObj, label, detailHtml = '';
+
+  if(type==='calculo'){
+    scoreObj = moduleScores.calculo;
+    label = 'Cálculo básico';
+    if(scoreObj) detailHtml = `
+      <div class="metric-card"><div class="val">${scoreObj.correctas}/${scoreObj.total}</div><div class="lab">Ejercicios correctos</div></div>
+      <div class="metric-card"><div class="val">${scoreObj.tiempoPromedioSeg}s</div><div class="lab">Tiempo promedio</div></div>
+      <div class="metric-card"><div class="val">${scoreObj.repeticiones}</div><div class="lab">Veces que pidió repetir</div></div>`;
+  }else{
+    scoreObj = moduleScores.memoriaVisual;
+    label = 'Memoria visual';
+    if(scoreObj) detailHtml = `
+      <div class="metric-card"><div class="val">${scoreObj.recordadas}/${scoreObj.totalMostradas}</div><div class="lab">Imágenes recordadas</div></div>
+      <div class="metric-card"><div class="val">${scoreObj.reconocioIntrusa?'Sí':'No'}</div><div class="lab">Reconoció la imagen nueva</div></div>`;
+  }
+
+  const run = {
+    id: 'run_' + Date.now(),
+    date: new Date().toISOString(),
+    type, userName, userAge,
+    puntaje: scoreObj ? scoreObj.puntaje : 0,
+    detalle: scoreObj || null
+  };
+  moduleRuns.push(run);
+  await saveModuleRuns();
+
+  renderSummary({
+    date: run.date,
+    indiceCognitivo: run.puntaje,
+    standalone: true,
+    standaloneLabel: label,
+    standaloneDetailHtml: detailHtml
+  });
   showView('summary');
 }
 
@@ -778,12 +1338,23 @@ function renderSummary(session){
   document.getElementById('scoreNum').textContent = session.indiceCognitivo;
   document.getElementById('scoreRing').style.setProperty('--pct', session.indiceCognitivo);
 
-  const alert = computeAlert(sessions);
   const banner = document.getElementById('alertBanner');
+  const grid = document.getElementById('metricGrid');
+  const label = document.getElementById('scoreLabel');
+
+  if(session.standalone){
+    label.textContent = session.standaloneLabel;
+    banner.className = 'alert-banner alert-green';
+    banner.innerHTML = `<div class="alert-dot"></div><div>Este es un ejercicio suelto de práctica. No reemplaza la conversación diaria completa, que es la que se usa para el seguimiento del índice cognitivo.</div>`;
+    grid.innerHTML = session.standaloneDetailHtml || '';
+    return;
+  }
+
+  label.textContent = 'Índice cognitivo';
+  const alert = computeAlert(sessions);
   banner.className = 'alert-banner alert-' + alert.level;
   banner.innerHTML = `<div class="alert-dot"></div><div>${alert.text}</div>`;
 
-  const grid = document.getElementById('metricGrid');
   grid.innerHTML = `
     <div class="metric-card"><div class="val">${session.durationSec}s</div><div class="lab">Duración</div></div>
     <div class="metric-card"><div class="val">${session.totalWords}</div><div class="lab">Palabras pronunciadas</div></div>
@@ -793,6 +1364,8 @@ function renderSummary(session){
     <div class="metric-card"><div class="val">${session.lexicalDiversity}%</div><div class="lab">Diversidad léxica</div></div>
     <div class="metric-card"><div class="val">${session.memoriaScore}%</div><div class="lab">Memoria</div></div>
     <div class="metric-card"><div class="val">${session.orientacionScore}%</div><div class="lab">Orientación</div></div>
+    ${session.calculo ? `<div class="metric-card"><div class="val">${session.calculo.puntaje}%</div><div class="lab">Cálculo (${session.calculo.correctas}/${session.calculo.total})</div></div>` : ''}
+    ${session.memoriaVisual ? `<div class="metric-card"><div class="val">${session.memoriaVisual.puntaje}%</div><div class="lab">Memoria visual</div></div>` : ''}
   `;
 }
 
@@ -839,12 +1412,17 @@ function renderDashboard(){
   const last = sessions[sessions.length-1];
   const prevMonthSess = sessions.filter(s=> (Date.now()-new Date(s.date).getTime()) > 25*86400000 && (Date.now()-new Date(s.date).getTime()) < 40*86400000);
   const variacionMes = last && prevMonthSess.length ? Math.round(((last.indiceCognitivo - avg(prevMonthSess.map(s=>s.indiceCognitivo)))/avg(prevMonthSess.map(s=>s.indiceCognitivo)))*100) : null;
+  const edadTexto = userAge ? `${userAge} años` : 'No registrada';
 
   if(dashTab==='familiar'){
     const last7 = sessions.filter(s=> (Date.now()-new Date(s.date).getTime()) < 7*86400000).length;
     content.innerHTML = `
       <div class="dash-section">
         <div class="alert-banner alert-${alert.level}"><div class="alert-dot"></div><div>${alert.text}</div></div>
+      </div>
+      <div class="dash-section">
+        <h3>Datos de la persona</h3>
+        <p class="small-note" style="margin-top:0">Nombre: <strong>${userName}</strong> · Edad: <strong>${edadTexto}</strong></p>
       </div>
       <div class="dash-section">
         <h3>Evolución del índice cognitivo</h3>
@@ -857,6 +1435,11 @@ function renderDashboard(){
         <div class="metric-card"><div class="val">${variacionMes!==null ? (variacionMes>0?'+':'')+variacionMes+'%' : 'Sin datos'}</div><div class="lab">Variación vs. mes anterior</div></div>
         <div class="metric-card"><div class="val">${last7}/7</div><div class="lab">Conversaciones esta semana</div></div>
       </div>
+      ${moduleRuns.length ? `
+      <div class="dash-section">
+        <h3>Ejercicios sueltos recientes</h3>
+        <p class="small-note" style="margin-top:0">${moduleRuns.length} ejercicio(s) practicados fuera de la conversación diaria (Cálculo o Memoria visual).</p>
+      </div>` : ''}
       <p class="small-note">Memoria AI es una herramienta de apoyo y seguimiento, no reemplaza una evaluación médica formal.</p>
     `;
   }else{
@@ -872,14 +1455,22 @@ function renderDashboard(){
         <td>${s.wordsPerMin}</td>
         <td>${s.longPauses}</td>
         <td>${s.fillerCount}</td>
+        <td>${s.calculo ? s.calculo.puntaje+'%' : '—'}</td>
+        <td>${s.memoriaVisual ? s.memoriaVisual.puntaje+'%' : '—'}</td>
       </tr>`).join('');
     content.innerHTML = `
       <div class="dash-section">
         <div class="alert-banner alert-${alert.level}"><div class="alert-dot"></div><div>${alert.text}</div></div>
       </div>
       <div class="dash-section">
+        <h3>Datos de la persona</h3>
+        <p class="small-note" style="margin-top:0">Nombre: <strong>${userName}</strong> · Edad: <strong>${edadTexto}</strong></p>
+      </div>
+      <div class="dash-section">
         <h3>Resumen ejecutivo</h3>
         <p>${userName} ha completado ${sessions.length} conversación(es) registradas. Índice cognitivo actual: <strong>${last?last.indiceCognitivo:'--'}</strong>/100${variacionMes!==null?` (variación de ${variacionMes>0?'+':''}${variacionMes}% vs. mes anterior)`:''}. Nivel de alerta: <strong>${alert.level.toUpperCase()}</strong>.</p>
+        ${last && last.calculo ? `<p class="small-note">Último módulo de cálculo: ${last.calculo.correctas}/${last.calculo.total} correctos (${last.calculo.puntaje}%).</p>` : ''}
+        ${last && last.memoriaVisual ? `<p class="small-note">Última memoria visual: ${last.memoriaVisual.puntaje}% (recordó ${last.memoriaVisual.recordadas}/${last.memoriaVisual.totalMostradas}, ${last.memoriaVisual.reconocioIntrusa?'sí':'no'} reconoció la imagen nueva).</p>` : ''}
       </div>
       <div class="dash-section">
         <h3>Evolución del índice cognitivo</h3>
@@ -889,11 +1480,26 @@ function renderDashboard(){
         <h3>Historial de variables por sesión</h3>
         <div style="overflow-x:auto;">
         <table class="vartable">
-          <tr><th>Fecha</th><th>Índice</th><th>Memoria</th><th>Orient.</th><th>Compr.</th><th>Coher.</th><th>Léxico</th><th>Pal/min</th><th>Pausas</th><th>Muletillas</th></tr>
-          ${rows || '<tr><td colspan="10">Sin sesiones registradas aún</td></tr>'}
+          <tr><th>Fecha</th><th>Índice</th><th>Memoria</th><th>Orient.</th><th>Compr.</th><th>Coher.</th><th>Léxico</th><th>Pal/min</th><th>Pausas</th><th>Muletillas</th><th>Cálculo</th><th>Mem. visual</th></tr>
+          ${rows || '<tr><td colspan="12">Sin sesiones registradas aún</td></tr>'}
         </table>
         </div>
         <p class="small-note">Variables acústicas y lingüísticas completas (prosodia, temblor, latencia por turno, anomias) requerirían integración con motores dedicados de análisis de audio (p. ej. openSMILE/librosa) y de PLN (spaCy/BERT en español) en el backend clínico — no incluidos en este prototipo de interfaz.</p>
+      </div>
+      <div class="dash-section">
+        <h3>Ejercicios sueltos (fuera de la conversación diaria)</h3>
+        <div style="overflow-x:auto;">
+        <table class="vartable">
+          <tr><th>Fecha</th><th>Módulo</th><th>Puntaje</th></tr>
+          ${moduleRuns.slice().reverse().map(r=>`
+          <tr>
+            <td>${new Date(r.date).toLocaleDateString('es-CL')}</td>
+            <td>${r.type==='calculo'?'Cálculo':'Memoria visual'}</td>
+            <td>${r.puntaje}%</td>
+          </tr>`).join('') || '<tr><td colspan="3">Sin ejercicios sueltos registrados aún</td></tr>'}
+        </table>
+        </div>
+        <p class="small-note">Estos ejercicios se practican desde la barra inferior, fuera de la conversación diaria, y no se mezclan con el Índice Cognitivo de la tabla de arriba.</p>
       </div>
     `;
   }
@@ -905,8 +1511,25 @@ function renderDashboard(){
 function showView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
-  if(name==='home'){ ensureName(); renderHome(); }
+
+  const nav = document.getElementById('bottomNav');
+  const showNav = (name==='home' || name==='dashboard');
+  nav.classList.toggle('show', showNav);
+  document.querySelector('.app').classList.toggle('nav-visible', showNav);
+  document.getElementById('navHome').classList.toggle('active', name==='home');
+  document.getElementById('navFamilia').classList.toggle('active', name==='dashboard');
+
+  if(name==='home'){
+    if(needsOnboarding()) showOnboarding(); else renderHome();
+  }
   if(name==='dashboard') renderDashboard();
+}
+function navTo(name){
+  if(name==='calculo' || name==='memoria_visual'){
+    startStandaloneModule(name);
+    return;
+  }
+  showView(name);
 }
 
 function renderHome(){
@@ -916,15 +1539,6 @@ function renderHome(){
   document.getElementById('homeSub').textContent = sessions.length
     ? '¿Conversamos un rato, como todos los días?'
     : 'Toquemos el botón para tener nuestra primera conversación.';
-}
-
-async function editName(){
-  const val = prompt('¿Cómo te gustaría que te llamemos?', userName);
-  if(val && val.trim()){
-    userName = val.trim();
-    await saveName();
-    renderHome();
-  }
 }
 
 /* =========================================================

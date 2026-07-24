@@ -271,7 +271,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v19</div>
+    <div class="build-tag no-print">v20</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -440,33 +440,76 @@ function editName(){
 /* =========================================================
    MÓDULOS DE CONVERSACIÓN
 ========================================================= */
+// Tres palabras para el módulo de atención/memoria inmediata — se elige un trío al azar
+// cada conversación, para que no sea siempre "Casa, Flor y Perro" (si fuera siempre igual,
+// la persona podría memorizarlo con el tiempo sin que eso refleje su memoria real).
+const TRIOS_PALABRAS = [
+  ['Casa','Flor','Perro'],
+  ['Mesa','Reloj','Pájaro'],
+  ['Libro','Sol','Gato'],
+  ['Silla','Luna','Río'],
+  ['Puerta','Estrella','Pan']
+];
+let trioPalabrasSesion = TRIOS_PALABRAS[0];
+function formatTrio(trio){ return `${trio[0]}, ${trio[1]} y ${trio[2]}`; }
+
+// Cada módulo conversacional trae varias variantes de pregunta (goal + fallback en pareja);
+// se elige una al azar cada vez que se conversa, para que la interacción no sea siempre
+// igual y se sienta como una charla nueva cada día, no un cuestionario repetido.
 const MODULES = [
-  {id:'saludo', titulo:'Saludo', type:'conversacional', goal:'Saluda con calidez a {name} y pregúntale cómo amaneció o cómo se siente en este momento.'},
-  {id:'rutina', titulo:'Rutina de hoy', type:'conversacional', goal:'Pregunta de forma natural qué desayunó y qué planes tiene para el resto del día.'},
-  {id:'memoria_reciente', titulo:'Memoria reciente', type:'conversacional', goal:'Pregunta con naturalidad qué almorzó ayer, o quién la llamó o visitó esta semana.'},
-  {id:'orientacion', titulo:'Orientación', type:'conversacional', goal:'Pregunta de forma casual qué día de la semana es hoy y en qué ciudad o lugar se encuentra.'},
-  {id:'atencion_fijacion', titulo:'Atención', type:'conversacional', goal:'Menciona con naturalidad tres palabras para que las recuerde más tarde en la charla: Casa, Flor y Perro. Pídele que las repita ahora mismo, como un juego, no como examen.'},
-  {id:'lenguaje', titulo:'Lenguaje', type:'conversacional', goal:'Pídele, con curiosidad genuina, que cuente paso a paso cómo prepararía un té o un café.'},
-  {id:'ejecutivas', titulo:'Resolviendo problemas', type:'conversacional', goal:'Plantea con tono ligero: si se cortara la luz en la casa ahora mismo, ¿qué haría primero?'},
-  {id:'narracion', titulo:'Un recuerdo', type:'conversacional', goal:'Pide con cariño que cuente algún recuerdo bonito de su infancia o juventud.'},
-  {id:'atencion_recuerdo', titulo:'Atención', type:'conversacional', goal:'Pregunta, como si fuera curiosidad, si recuerda las tres palabras que mencionaste antes (Casa, Flor, Perro), sin repetírselas.'},
+  {id:'saludo', titulo:'Saludo', type:'conversacional', variants:[
+    {goal:'Saluda con calidez a {name} y pregúntale cómo amaneció o cómo se siente en este momento.', fallback:'Qué gusto conversar con usted, {name}. ¿Cómo amaneció hoy?'},
+    {goal:'Saluda con cariño a {name} y pregúntale cómo ha estado su día hasta ahora.', fallback:'Hola, {name}, qué alegría escucharla. ¿Cómo ha estado su día?'}
+  ]},
+  {id:'rutina', titulo:'Rutina de hoy', type:'conversacional', variants:[
+    {goal:'Pregunta de forma natural qué desayunó y qué planes tiene para el resto del día.', fallback:'Cuénteme, con calma, ¿qué desayunó esta mañana? ¿Tiene algún plan lindo para hoy?'},
+    {goal:'Pregunta con curiosidad genuina qué almorzó o piensa almorzar hoy, y si va a ver a alguien querido.', fallback:'¿Qué almorzó o piensa almorzar hoy? ¿Va a ver a alguien especial?'},
+    {goal:'Pregunta con cariño cómo durmió anoche y qué le gustaría hacer si tuviera la tarde libre.', fallback:'¿Cómo durmió anoche? Si tuviera la tarde libre, ¿qué le gustaría hacer?'}
+  ]},
+  {id:'memoria_reciente', titulo:'Memoria reciente', type:'conversacional', variants:[
+    {goal:'Pregunta con naturalidad qué almorzó ayer, o quién la llamó o visitó esta semana.', fallback:'¿Qué almorzó ayer? ¿La llamó o la visitó alguien querido esta semana?'},
+    {goal:'Pregunta con curiosidad qué hizo el fin de semana pasado, o algo lindo que haya pasado esta semana.', fallback:'¿Qué hizo el fin de semana pasado? ¿Pasó algo lindo esta semana?'},
+    {goal:'Pregunta con cariño si vio algún programa de televisión o escuchó algo en la radio últimamente, y qué le pareció.', fallback:'¿Ha visto algún programa de televisión últimamente? ¿Qué le pareció?'}
+  ]},
+  {id:'orientacion', titulo:'Orientación', type:'conversacional', variants:[
+    {goal:'Pregunta de forma casual qué día de la semana es hoy y en qué ciudad o lugar se encuentra.', fallback:'Se me fue el hilo por un momento… ¿qué día de la semana es hoy? ¿Y dónde estamos?'},
+    {goal:'Pregunta con naturalidad qué día de la semana es hoy, como quien confirma un dato antes de seguir contando algo, y en qué comuna o barrio vive.', fallback:'Antes de seguir… ¿qué día de la semana es hoy? ¿Y en qué comuna vive?'}
+  ]},
+  {id:'atencion_fijacion', titulo:'Atención', type:'conversacional', variants:[
+    {goal:`Menciona con naturalidad tres palabras para que las recuerde más tarde en la charla: {trio}. Pídele que las repita ahora mismo, como un juego, no como examen.`, fallback:`Le voy a decir tres palabras para que las recuerde más tarde: {trio}. ¿Me las repite ahora, por favor?`}
+  ]},
+  {id:'lenguaje', titulo:'Lenguaje', type:'conversacional', variants:[
+    {goal:'Pídele, con curiosidad genuina, que cuente paso a paso cómo prepararía un té o un café.', fallback:'Tengo ganas de tomar un té. ¿Me cuenta con calma cómo lo prepararía?'},
+    {goal:'Pídele con cariño que explique paso a paso cómo prepararía su plato de comida favorito.', fallback:'¿Cuál es su plato favorito? ¿Me cuenta con calma cómo lo prepararía?'},
+    {goal:'Pídele que explique, paso a paso, cómo se dobla o se guarda la ropa recién lavada.', fallback:'¿Me puede contar, paso a paso, cómo dobla usted la ropa recién lavada?'}
+  ]},
+  {id:'ejecutivas', titulo:'Resolviendo problemas', type:'conversacional', variants:[
+    {goal:'Plantea con tono ligero: si se cortara la luz en la casa ahora mismo, ¿qué haría primero?', fallback:'Imagínese que de repente se corta la luz en su casa. ¿Qué haría primero?'},
+    {goal:'Plantea con tono ligero: si perdiera las llaves de la casa, ¿qué haría primero para solucionarlo?', fallback:'Imagínese que no encuentra las llaves de la casa. ¿Qué haría primero?'},
+    {goal:'Plantea con tono ligero: si suena el teléfono y no reconoce el número, ¿qué haría?', fallback:'Si suena el teléfono y no reconoce el número que llama, ¿qué haría?'}
+  ]},
+  {id:'narracion', titulo:'Un recuerdo', type:'conversacional', variants:[
+    {goal:'Pide con cariño que cuente algún recuerdo bonito de su infancia o juventud.', fallback:'Cuénteme algún recuerdo bonito de su infancia o de cuando era joven, me encanta escucharla.'},
+    {goal:'Pide con cariño que cuente cómo conoció a alguien muy importante en su vida.', fallback:'¿Me cuenta cómo conoció a alguien muy importante en su vida?'},
+    {goal:'Pide con ternura que cuente algún recuerdo bonito de alguna celebración o fiesta familiar.', fallback:'¿Recuerda alguna celebración o fiesta familiar especialmente bonita? Cuénteme de ella.'}
+  ]},
+  {id:'estado_animo', titulo:'Cómo se siente', type:'conversacional', variants:[
+    {goal:'Pregunta con genuina calidez cómo se ha sentido de ánimo últimamente, si ha estado más contenta, más cansada, o distinta.', fallback:'¿Cómo se ha sentido de ánimo estos días, {name}?'},
+    {goal:'Pregunta con cariño qué es algo que la haya hecho sonreír últimamente.', fallback:'¿Qué es algo que la haya hecho sonreír últimamente?'}
+  ]},
   {id:'calculo', titulo:'Cálculo', type:'calculo'},
   {id:'memoria_visual', titulo:'Memoria visual', type:'memoria_visual'},
-  {id:'despedida', titulo:'Despedida', type:'conversacional', goal:'Agradece la conversación con calidez genuina y despídete hasta la próxima charla.'}
+  {id:'gratitud', titulo:'Algo lindo', type:'conversacional', variants:[
+    {goal:'Pregunta con calidez si hay algo que esté esperando con ganas los próximos días, o algo por lo que se sienta agradecida.', fallback:'¿Hay algo lindo que esté esperando con ganas estos días?'},
+    {goal:'Pregunta con cariño quién es una persona importante en su vida hoy y por qué.', fallback:'¿Quién es una persona importante en su vida hoy? ¿Por qué?'}
+  ]},
+  {id:'atencion_recuerdo', titulo:'Atención', type:'conversacional', variants:[
+    {goal:`Pregunta, como si fuera curiosidad, si recuerda las tres palabras que mencionaste antes ({trio}), sin repetírselas.`, fallback:`Antes le mencioné tres palabras con cariño. ¿Se acuerda cuáles eran?`}
+  ]},
+  {id:'despedida', titulo:'Despedida', type:'conversacional', variants:[
+    {goal:'Agradece la conversación con calidez genuina y despídete hasta la próxima charla.', fallback:'Fue realmente lindo conversar con usted, {name}. Que tenga un día precioso. La espero con cariño en nuestra próxima charla.'}
+  ]}
 ];
-
-const FALLBACK_LINES = {
-  saludo: `Qué gusto conversar con usted, {name}. ¿Cómo amaneció hoy?`,
-  rutina: `Cuénteme, con calma, ¿qué desayunó esta mañana? ¿Tiene algún plan lindo para hoy?`,
-  memoria_reciente: `¿Qué almorzó ayer? ¿La llamó o la visitó alguien querido esta semana?`,
-  orientacion: `Se me fue el hilo por un momento… ¿qué día de la semana es hoy? ¿Y dónde estamos?`,
-  atencion_fijacion: `Le voy a decir tres palabras para que las recuerde más tarde: Casa, Flor y Perro. ¿Me las repite ahora, por favor?`,
-  lenguaje: `Tengo ganas de tomar un té. ¿Me cuenta con calma cómo lo prepararía?`,
-  ejecutivas: `Imagínese que de repente se corta la luz en su casa. ¿Qué haría primero?`,
-  narracion: `Cuénteme algún recuerdo bonito de su infancia o de cuando era joven, me encanta escucharla.`,
-  atencion_recuerdo: `Antes le mencioné tres palabras con cariño. ¿Se acuerda cuáles eran?`,
-  despedida: `Fue realmente lindo conversar con usted, {name}. Que tenga un día precioso. La espero con cariño en nuestra próxima charla.`
-};
 
 /* =========================================================
    ÍCONOS (dibujados en SVG, originales — sin imágenes externas)
@@ -575,6 +618,9 @@ const ELEVEN_VOICE_ID  = '';  // ← pega aquí el ID de una voz en español LAT
 const ELEVEN_MODEL_ID  = 'eleven_turbo_v2_5'; // modelo multilingüe optimizado para baja latencia = conversación más fluida
                                                // (si prefieres priorizar calidad sobre velocidad, cambia a 'eleven_multilingual_v2')
 
+let currentAudioEl = null;   // audio de ElevenLabs actualmente sonando (para poder detenerlo)
+let speechCancelled = false; // se activa al tocar "Terminar", detiene cualquier fragmento en curso
+
 async function speakElevenLabsChunk(text){
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}/stream?optimize_streaming_latency=2`, {
     method:'POST',
@@ -603,11 +649,14 @@ async function speakElevenLabsChunk(text){
   if(!res.ok) throw new Error('ElevenLabs respondió '+res.status);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
+  if(speechCancelled){ URL.revokeObjectURL(url); return; } // se canceló mientras se generaba el audio
   await new Promise(resolve=>{
     const audio = new Audio(url);
-    audio.onended = ()=>{ URL.revokeObjectURL(url); resolve(); };
-    audio.onerror = ()=>{ URL.revokeObjectURL(url); resolve(); };
-    audio.play().catch(()=>{ URL.revokeObjectURL(url); resolve(); });
+    currentAudioEl = audio;
+    const cleanup = ()=>{ URL.revokeObjectURL(url); if(currentAudioEl===audio) currentAudioEl=null; resolve(); };
+    audio.onended = cleanup;
+    audio.onerror = cleanup;
+    audio.play().catch(cleanup);
   });
 }
 /* Habla fragmento por fragmento (como una persona real, respirando entre ideas) con
@@ -620,7 +669,9 @@ async function speakElevenLabs(text){
   const fragmentos = partes.length ? partes : [text];
   try{
     for(let i=0; i<fragmentos.length; i++){
+      if(speechCancelled) return true; // se tocó "Terminar": no se sigue hablando solo
       await speakElevenLabsChunk(fragmentos[i]);
+      if(speechCancelled) return true;
       if(i < fragmentos.length-1){
         const esPregunta = /[?¿]\s*$/.test(fragmentos[i]);
         await new Promise(r=>setTimeout(r, esPregunta ? 495 : 340));
@@ -671,7 +722,7 @@ function speakBrowserTTS(text){
       const queue = parts.length ? parts : [text];
       let i = 0;
       const speakNext = ()=>{
-        if(i >= queue.length){ resolve(); return; }
+        if(i >= queue.length || speechCancelled){ resolve(); return; }
         const u = new SpeechSynthesisUtterance(queue[i]);
         u.lang = 'es-CL';
         u.rate = 0.88 + Math.random()*0.08;   // ~0.88–0.96, pausado pero natural
@@ -693,9 +744,22 @@ function speakBrowserTTS(text){
 /* Punto de entrada único para hablar: intenta primero ElevenLabs (voz natural);
    si no está configurado o falla, usa automáticamente la voz del navegador. */
 async function speak(text){
+  speechCancelled = false; // cada vez que se empieza a hablar de nuevo, se habilita la voz
   const ok = await speakElevenLabs(text);
   if(ok) return;
   return speakBrowserTTS(text);
+}
+
+/* Detiene de verdad cualquier voz en curso: tanto la síntesis del navegador como un
+   audio de ElevenLabs que esté sonando (cancelar solo speechSynthesis no alcanza para
+   detener un <audio> de ElevenLabs, por eso antes seguía hablando sola tras "Terminar"). */
+function stopAllSpeech(){
+  speechCancelled = true;
+  window.speechSynthesis.cancel();
+  if(currentAudioEl){
+    try{ currentAudioEl.pause(); currentAudioEl.currentTime = 0; }catch(e){}
+    currentAudioEl = null;
+  }
 }
 
 /* Escucha automática afinada para adultos mayores: el micrófono se activa solo apenas
@@ -705,9 +769,9 @@ async function speak(text){
    una conversación "apurada". Además, si el navegador corta el reconocimiento solo
    (algo común incluso en modo "continuo", cada 5-10 segundos aprox.), se reinicia
    automáticamente sin perder lo ya dicho, en vez de cortar la respuesta a medias. */
-const SILENCE_MS  = 4200;   // silencio real tras hablar = recién ahí se da la respuesta por terminada
-const MAX_WAIT_MS = 22000;  // tiempo de espera si todavía no empieza a responder
-const MAX_TURN_MS = 90000;  // tope absoluto de seguridad por turno
+const SILENCE_MS  = 5500;   // silencio real tras hablar = recién ahí se da la respuesta por terminada
+const MAX_WAIT_MS = 26000;  // tiempo de espera si todavía no empieza a responder
+const MAX_TURN_MS = 100000; // tope absoluto de seguridad por turno
 let manualStopResolve = null; // permite al botón forzar el cierre del turno actual
 
 function listenAuto(){
@@ -716,7 +780,8 @@ function listenAuto(){
     const micBtn = document.getElementById('micBtn');
     const live = document.getElementById('userLive');
     const hint = document.getElementById('micHint');
-    let finalText = '';
+    let confirmedText = ''; // texto ya cerrado de ciclos de reconocimiento anteriores (antes de un reinicio)
+    let cycleFinal = '';    // texto final del ciclo ACTUAL (se recalcula completo en cada resultado, no se acumula)
     let hasSpoken = false;
     let settled = false;
     let watchdog = null;
@@ -735,7 +800,7 @@ function listenAuto(){
         try{ recognizer.stop(); }catch(e){}
       }
       listening=false; micBtn.classList.remove('listening');
-      resolve(finalText.trim());
+      resolve((confirmedText + cycleFinal).replace(/\s+/g,' ').trim());
     };
     manualStopResolve = finish;
 
@@ -748,6 +813,7 @@ function listenAuto(){
 
     const startCycle = ()=>{
       if(settled) return;
+      cycleFinal = ''; // cada ciclo de reconocimiento empieza su propio conteo desde cero
       recognizer = new SpeechRecognitionAPI();
       recognizer.lang = 'es-CL';
       recognizer.interimResults = true;
@@ -761,15 +827,20 @@ function listenAuto(){
       };
       recognizer.onresult = (ev)=>{
         hasSpoken = true;
-        let interim='';
-        for(let i=ev.resultIndex;i<ev.results.length;i++){
+        // Se recalcula TODO el texto final del ciclo actual desde el resultado 0 cada vez
+        // (en vez de sumar con += sobre ev.resultIndex): así se evita que Chrome duplique
+        // palabras cuando reconfirma un resultado ya entregado ("si si gracias gracias").
+        let finalChunk = '';
+        let interim = '';
+        for(let i=0; i<ev.results.length; i++){
           const t = ev.results[i][0].transcript;
-          if(ev.results[i].isFinal) finalText += t + ' ';
+          if(ev.results[i].isFinal) finalChunk += t + ' ';
           else interim += t;
         }
+        cycleFinal = finalChunk;
         // Se muestra en pantalla lo reconocido en tiempo real: permite verificar que la
         // aplicación está entendiendo bien lo que dice la persona.
-        live.textContent = (finalText + interim).trim();
+        live.textContent = (confirmedText + cycleFinal + interim).replace(/\s+/g,' ').trim();
         hint.textContent = 'Le escucho…';
         armWatchdog();
       };
@@ -777,6 +848,7 @@ function listenAuto(){
       recognizer.onerror = (e)=>{
         if(settled) return;
         if(e && e.error==='aborted') return; // provocado por nuestro propio stop(), se ignora
+        confirmedText += cycleFinal; // se guarda lo ya reconocido antes de reiniciar el ciclo
         // Errores pasajeros (silencio interno del motor, red, etc.): reintentamos
         // sin dar la respuesta por cortada, para no perder lo que la persona alcanzó a decir.
         if(Date.now()-turnStart < MAX_TURN_MS){ setTimeout(startCycle, 300); }
@@ -785,6 +857,7 @@ function listenAuto(){
       recognizer.onend = ()=>{
         if(settled) return;
         listening=false; micBtn.classList.remove('listening');
+        confirmedText += cycleFinal; // se guarda lo ya reconocido antes de reiniciar el ciclo
         // El navegador corta la escucha solo de tanto en tanto incluso en modo continuo;
         // como una persona mayor puede estar a mitad de una pausa para pensar, la reanudamos
         // automáticamente sin perder el texto ya capturado, en vez de cerrar el turno antes de tiempo.
@@ -905,7 +978,7 @@ function analyzeTranscript(turns){
 
   // Módulo de atención - recuerdo de palabras
   const recallTurn = turns.find(t=>t.module==='atencion_recuerdo');
-  const targetWords = ['casa','flor','perro'];
+  const targetWords = trioPalabrasSesion.map(w=>w.toLowerCase());
   let recalled = 0;
   if(recallTurn){
     const low = (recallTurn.userText||'').toLowerCase();
@@ -964,6 +1037,7 @@ async function startConversation(){
   currentModuleIndex = 0;
   moduleScores = { calculo:null, memoriaVisual:null };
   usedIconKeys = new Set();
+  trioPalabrasSesion = TRIOS_PALABRAS[Math.floor(Math.random()*TRIOS_PALABRAS.length)];
   showView('conversation');
   setInputMode('voice');
   resetModuleUI();
@@ -991,15 +1065,22 @@ async function runModule(){
   bubble.classList.add('thinking');
   bubble.textContent = '…';
 
+  // Se elige una variante de pregunta al azar para este módulo (así la conversación
+  // no es siempre igual), y se rellenan los datos de la persona y el trío de palabras.
+  const variante = mod.variants[Math.floor(Math.random()*mod.variants.length)];
+  const trioTexto = formatTrio(trioPalabrasSesion);
+  const goalTexto = variante.goal.replace(/{name}/g, userName).replace(/{trio}/g, trioTexto);
+  const fallbackTexto = variante.fallback.replace(/{name}/g, userName).replace(/{trio}/g, trioTexto);
+
   const history = currentTurns.slice(-3).flatMap(t=>[
     {role:'assistant', content:t.aiText},
     {role:'user', content:t.userText || '(sin respuesta clara)'}
   ]);
-  history.push({role:'user', content:`[Objetivo del turno actual — ${mod.titulo}]: ${mod.goal.replace('{name}', userName)}`});
+  history.push({role:'user', content:`[Objetivo del turno actual — ${mod.titulo}]: ${goalTexto}`});
 
   const sysPrompt = SYSTEM_PROMPT.replace(/{name}/g, userName);
-  let aiText = await askClaude(sysPrompt, history.length ? history : [{role:'user', content:mod.goal.replace('{name}', userName)}]);
-  if(!aiText) aiText = FALLBACK_LINES[mod.id].replace('{name}', userName);
+  let aiText = await askClaude(sysPrompt, history.length ? history : [{role:'user', content:goalTexto}]);
+  if(!aiText) aiText = fallbackTexto;
 
   bubble.classList.remove('thinking');
   bubble.textContent = aiText;
@@ -1033,6 +1114,11 @@ function buildCalculoExercises(){
   const a3=Math.floor(Math.random()*12)+8, b3=Math.floor(Math.random()*9)+3;
   const a4=Math.floor(Math.random()*4)+2, b4=Math.floor(Math.random()*4)+2;
   const dinero=Math.floor(Math.random()*6)+8, gasto=Math.floor(Math.random()*(dinero-2))+2;
+  const huevos=Math.floor(Math.random()*4)+2, docenas=Math.floor(Math.random()*3)+2; // multiplicación con contexto
+  const divTabla=[2,3,4,5][Math.floor(Math.random()*4)];
+  const divResultado=Math.floor(Math.random()*6)+2;
+  const divTotal=divTabla*divResultado; // división exacta, sin decimales
+  const vueltoPaga=Math.floor(Math.random()*4)+7, vueltoCuesta=Math.floor(Math.random()*(vueltoPaga-1))+1;
   // "spoken" trae pausas naturales (…) entre el número y la operación, para que la IA
   // lea el ejercicio más lento y claro; "prompt" es el texto limpio que se ve en pantalla.
   return [
@@ -1040,6 +1126,9 @@ function buildCalculoExercises(){
     {prompt:`¿Cuánto es ${Math.max(a2,b2)} menos ${Math.min(a2,b2)}?`, spoken:`¿Cuánto es ${Math.max(a2,b2)}… menos ${Math.min(a2,b2)}?`, answer:Math.max(a2,b2)-Math.min(a2,b2)},
     {prompt:`¿Cuánto es ${a3} más ${b3}?`, spoken:`¿Cuánto es ${a3}… más ${b3}?`, answer:a3+b3},
     {prompt:`¿Cuánto es ${a4} multiplicado por ${b4}?`, spoken:`¿Cuánto es ${a4}… multiplicado por ${b4}?`, answer:a4*b4},
+    {prompt:`Si tiene ${huevos} huevos en cada bandeja y hay ${docenas} bandejas, ¿cuántos huevos hay en total?`, spoken:`Si tiene ${huevos} huevos en cada bandeja… y hay ${docenas} bandejas… ¿cuántos huevos hay en total?`, answer:huevos*docenas},
+    {prompt:`¿Cuánto es ${divTotal} dividido en ${divTabla}?`, spoken:`¿Cuánto es ${divTotal}… dividido en ${divTabla}?`, answer:divResultado},
+    {prompt:`Si algo cuesta ${vueltoCuesta} mil pesos y usted paga con ${vueltoPaga} mil, ¿cuánto vuelto le dan?`, spoken:`Si algo cuesta ${vueltoCuesta} mil pesos… y usted paga con ${vueltoPaga} mil… ¿cuánto vuelto le dan?`, answer:vueltoPaga-vueltoCuesta},
     {prompt:`Si tiene ${dinero} mil pesos y gasta ${gasto} mil, ¿cuántos mil pesos le quedan?`, spoken:`Si tiene ${dinero} mil pesos… y gasta ${gasto} mil… ¿cuántos mil pesos le quedan?`, answer:dinero-gasto}
   ];
 }
@@ -1188,7 +1277,7 @@ function hideImageOnScreen(){
 async function runMemoriaVisualModule(){
   resetModuleUI();
   const bubble = document.getElementById('aiBubble');
-  const mostradas = pickUnusedIcons(5);
+  const mostradas = pickUnusedIcons(6);
   const usadosEnEsteModulo = new Set(mostradas.map(([k])=>k));
   const [nueva] = pickUnusedIcons(1, usadosEnEsteModulo);
 
@@ -1196,9 +1285,10 @@ async function runMemoriaVisualModule(){
   bubble.textContent = 'Observe estas imágenes…';
   await speak(intro);
   showImageGroupOnScreen(mostradas);
-  await new Promise(r=>setTimeout(r, 6000));
+  await new Promise(r=>setTimeout(r, 7000));
   hideImageOnScreen();
 
+  // Ronda 1: recuerdo libre de lo observado.
   bubble.textContent = '¿Cuáles de esas imágenes recuerda haber visto?';
   document.getElementById('userLive').textContent = '';
   await speak('¿Cuáles de esas imágenes recuerda haber visto?');
@@ -1207,8 +1297,21 @@ async function runMemoriaVisualModule(){
   let recordadas = 0;
   mostradas.forEach(([k,item])=>{ if(lowRecall.includes(item.label.toLowerCase())) recordadas++; });
 
+  // Ronda 2: identificar cuál imagen del grupo original ya no está (falta).
+  const faltante = mostradas[Math.floor(Math.random()*mostradas.length)];
+  const grupoConFaltante = mostradas.filter(([k])=>k!==faltante[0]);
+  bubble.textContent = 'Le muestro casi las mismas imágenes de antes… ¿cuál falta ahora?';
+  showImageGroupOnScreen(shuffleArray(grupoConFaltante));
+  document.getElementById('userLive').textContent = '';
+  await speak('Le muestro casi las mismas imágenes de antes. ¿Cuál de ellas falta ahora?');
+  const respFaltante = await waitForUserTurn();
+  const lowFaltante = (respFaltante||'').toLowerCase();
+  const acertoFaltante = lowFaltante.includes(faltante[1].label.toLowerCase()) || (faltante[1].alias||[]).some(a=>lowFaltante.includes(a));
+  hideImageOnScreen();
+
+  // Ronda 3: reconocer cuál imagen NUEVA (nunca mostrada) aparece en el grupo.
   bubble.textContent = 'De este nuevo grupo, ¿cuál imagen NO le mostré antes?';
-  const grupoReconocimiento = shuffleArray([...shuffleArray(mostradas).slice(0,4), nueva]);
+  const grupoReconocimiento = shuffleArray([...shuffleArray(mostradas).slice(0,5), nueva]);
   showImageGroupOnScreen(grupoReconocimiento);
   document.getElementById('userLive').textContent = '';
   await speak('De este nuevo grupo, ¿cuál imagen no le mostré antes?');
@@ -1218,17 +1321,18 @@ async function runMemoriaVisualModule(){
   hideImageOnScreen();
 
   const memoriaInmediataScore = Math.round((recordadas/mostradas.length)*100);
+  const faltanteScore = acertoFaltante ? 100 : 0;
   const reconocimientoScore = reconocioIntrusa ? 100 : 0;
-  const puntaje = Math.round(memoriaInmediataScore*0.6 + reconocimientoScore*0.4);
+  const puntaje = Math.round(memoriaInmediataScore*0.4 + faltanteScore*0.3 + reconocimientoScore*0.3);
 
-  moduleScores.memoriaVisual = { puntaje, recordadas, totalMostradas:mostradas.length, reconocioIntrusa };
+  moduleScores.memoriaVisual = { puntaje, recordadas, totalMostradas:mostradas.length, acertoFaltante, reconocioIntrusa };
   const cierre = 'Muy bien, gracias por su atención.';
   bubble.textContent = cierre;
   await speak(cierre);
 }
 
 function endConversation(early){
-  window.speechSynthesis.cancel();
+  stopAllSpeech();
   if(recognizer){ try{ recognizer.stop(); }catch(e){} }
   resetModuleUI();
   setInputMode('voice');
@@ -1237,7 +1341,7 @@ function endConversation(early){
 }
 
 async function finishConversation(){
-  window.speechSynthesis.cancel();
+  stopAllSpeech();
   resetModuleUI();
   setInputMode('voice');
   const metrics = analyzeTranscript(currentTurns);
@@ -1299,7 +1403,7 @@ async function startStandaloneModule(type){
 }
 
 async function finishStandaloneModule(type){
-  window.speechSynthesis.cancel();
+  stopAllSpeech();
   resetModuleUI();
   setInputMode('voice');
   let scoreObj, label, detailHtml = '';
@@ -1585,7 +1689,7 @@ function skipSplash(){
   if(splashDone) return;
   splashDone = true;
   if(splashTimer) clearTimeout(splashTimer);
-  window.speechSynthesis.cancel();
+  stopAllSpeech();
   showView('home');
 }
 

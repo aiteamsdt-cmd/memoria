@@ -271,7 +271,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v23</div>
+    <div class="build-tag no-print">v25</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -745,6 +745,79 @@ async function speakElevenLabs(text){
   }
 }
 
+/* ==== Voz Google Cloud Text-to-Speech (opcional, gratis hasta 1M caracteres/mes) ====
+   Alternativa a ElevenLabs si no quieres pagar: el audio se genera en el servidor de
+   Google, así que suena EXACTAMENTE igual en cualquier dispositivo (a diferencia de la
+   voz del navegador, que depende de lo que tenga instalado cada teléfono/computador).
+
+   Para activarla:
+   1. Entra a https://console.cloud.google.com/ y crea un proyecto (o usa uno existente).
+   2. Busca "Text-to-Speech API" y actívala para ese proyecto.
+   3. Ve a "Credenciales" → "Crear credenciales" → "Clave de API", y pégala abajo.
+      (Recomendado: restringe esa clave para que solo pueda usarse con la Text-to-Speech
+      API, desde "Restricciones de API" en la configuración de la clave.)
+   4. La cuota gratis (1 millón de caracteres/mes con voces WaveNet) alcanza de sobra
+      para uso diario de esta app.
+   Si se deja vacío, la app sigue funcionando igual con la voz del navegador — no se
+   rompe nada. Si ElevenLabs está configurado arriba, ElevenLabs tiene prioridad.
+
+   ADVERTENCIA DE SEGURIDAD: igual que con ElevenLabs, esta clave queda visible en el
+   código fuente de la página para cualquiera que la abra. Para un prototipo o uso
+   controlado es aceptable (sobre todo restringiendo la clave a esta única API); para
+   un lanzamiento público real, esta llamada debería hacerse desde un backend propio. */
+const GOOGLE_TTS_API_KEY = '';  // ← pega aquí tu API key de Google Cloud
+const GOOGLE_TTS_VOICE   = 'es-US-Neural2-A'; // voz de Memoria (cámbiala si prefieres otra: ver "Voces" en la documentación de Google Cloud TTS. Ej. masculina: 'es-US-Neural2-B')
+const GOOGLE_TTS_GENDER  = 'FEMALE'; // 'FEMALE' o 'MALE' — debe coincidir con la voz elegida arriba
+
+async function speakGoogleTTSChunk(text){
+  const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      input:{ text },
+      voice:{ languageCode:'es-US', name:GOOGLE_TTS_VOICE, ssmlGender:GOOGLE_TTS_GENDER },
+      audioConfig:{ audioEncoding:'MP3', speakingRate:0.9, pitch:0 } // ritmo algo más lento, pensado para adultos mayores
+    })
+  });
+  if(!res.ok) throw new Error('Google TTS respondió '+res.status);
+  const data = await res.json();
+  if(!data.audioContent) throw new Error('Google TTS no devolvió audio');
+  const byteChars = atob(data.audioContent);
+  const bytes = new Uint8Array(byteChars.length);
+  for(let i=0;i<byteChars.length;i++) bytes[i] = byteChars.charCodeAt(i);
+  const blob = new Blob([bytes], {type:'audio/mp3'});
+  const url = URL.createObjectURL(blob);
+  if(speechCancelled){ URL.revokeObjectURL(url); return; }
+  await new Promise(resolve=>{
+    const audio = new Audio(url);
+    currentAudioEl = audio;
+    const cleanup = ()=>{ URL.revokeObjectURL(url); if(currentAudioEl===audio) currentAudioEl=null; resolve(); };
+    audio.onended = cleanup;
+    audio.onerror = cleanup;
+    audio.play().catch(cleanup);
+  });
+}
+async function speakGoogleTTS(text){
+  if(!GOOGLE_TTS_API_KEY) return false; // no configurado: seguir con el siguiente respaldo
+  const partes = text.split(/(?<=[.!?…])\s+/).filter(Boolean);
+  const fragmentos = partes.length ? partes : [text];
+  try{
+    for(let i=0; i<fragmentos.length; i++){
+      if(speechCancelled) return true;
+      await speakGoogleTTSChunk(fragmentos[i]);
+      if(speechCancelled) return true;
+      if(i < fragmentos.length-1){
+        const esPregunta = /[?¿]\s*$/.test(fragmentos[i]);
+        await new Promise(r=>setTimeout(r, esPregunta ? 495 : 340));
+      }
+    }
+    return true;
+  }catch(e){
+    console.warn('Google TTS no disponible, uso la voz del navegador como respaldo:', e);
+    return false;
+  }
+}
+
 /* Elige la mejor voz en español disponible en el navegador/dispositivo, priorizando
    las voces neuronales u "online" (mucho más naturales) sobre las locales clásicas,
    que suelen sonar robóticas. La calidad final depende de las voces que traiga
@@ -802,12 +875,13 @@ function speakBrowserTTS(text){
   });
 }
 
-/* Punto de entrada único para hablar: intenta primero ElevenLabs (voz natural);
-   si no está configurado o falla, usa automáticamente la voz del navegador. */
+/* Punto de entrada único para hablar: intenta primero ElevenLabs, luego Google Cloud
+   TTS (si están configurados); si ninguno está disponible o falla, usa automáticamente
+   la voz del navegador. */
 async function speak(text){
   speechCancelled = false; // cada vez que se empieza a hablar de nuevo, se habilita la voz
-  const ok = await speakElevenLabs(text);
-  if(ok) return;
+  if(await speakElevenLabs(text)) return;
+  if(await speakGoogleTTS(text)) return;
   return speakBrowserTTS(text);
 }
 
@@ -1208,7 +1282,6 @@ async function startConversation(){
   resetModuleUI();
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
-  ensureAudioAnalyser(); // no se espera: si falla o no hay permiso, la conversación sigue igual
   await runModule();
 }
 
@@ -1577,7 +1650,6 @@ async function startStandaloneModule(type){
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
   document.getElementById('progressFill').style.width = '0%';
-  if(type==='memoria_visual') ensureAudioAnalyser(); // solo hace falta para el que usa voz
 
   const titulos = {calculo:'Cálculo', memoria_visual:'Memoria visual'};
   document.getElementById('modulePill').textContent = titulos[type] || 'Ejercicio';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Memoria AI</title>
+<title>Memoria</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -105,6 +105,7 @@ button{font-family:var(--font-body); cursor:pointer; border:none;}
 }
 .mic-giant svg{width:52px; height:52px;}
 .home-links{display:flex; gap:14px; margin-top:38px; flex-wrap:wrap; justify-content:center;}
+.build-tag{margin-top:28px; font-size:.72rem; color:var(--ink-faint); opacity:0.55; letter-spacing:.04em;}
 .link-ghost{background:none; color:var(--ink-soft); font-size:.95rem; text-decoration:underline; padding:6px;}
 .edit-name{position:absolute; top:22px; right:22px; background:none; color:var(--ink-faint); font-size:.85rem; text-decoration:underline;}
 
@@ -125,7 +126,13 @@ button{font-family:var(--font-body); cursor:pointer; border:none;}
 @keyframes fadeInUp{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 .ai-bubble.thinking{color:var(--ink-faint); font-style:italic;}
 .pulse-ring{width:16px; height:16px; border-radius:50%; background:var(--sage);}
-.user-live{display:none;}
+.user-live{
+  min-height:28px; color:var(--ink-soft); font-size:1.05rem; font-style:italic;
+  max-width:480px; text-align:center; padding:0 12px; transition:opacity .2s ease;
+}
+.user-live:empty{opacity:0;}
+.user-live::before{content:'"'; opacity:.5;}
+.user-live:not(:empty)::after{content:'"'; opacity:.5;}
 .type-fallback{display:none; width:100%; max-width:480px; gap:10px; margin-top:6px;}
 .type-fallback.active{display:flex;}
 .type-fallback input{flex:1; padding:14px 18px; border-radius:14px; border:1.5px solid var(--sage-soft); font-size:1rem; font-family:var(--font-body);}
@@ -201,7 +208,8 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
 /* ---------- TARJETAS DE IMÁGENES (módulos identificación / memoria visual) ---------- */
 .image-stage{display:none; flex-wrap:wrap; gap:16px; justify-content:center; align-items:center; margin:6px 0;}
 .image-stage.show{display:flex; animation:fadeInUp .3s ease both;}
-.image-card{width:130px; height:130px; background:var(--tint, var(--paper-dim)); border-radius:24px; display:flex; align-items:center; justify-content:center; padding:20px; box-shadow:var(--shadow-soft); border:1.5px solid rgba(31,58,61,0.06);}
+.image-card{width:156px; height:156px; background:var(--tint, var(--paper-dim)); border-radius:26px; display:flex; align-items:center; justify-content:center; padding:22px; box-shadow:0 6px 18px rgba(31,58,61,0.12); border:2px solid rgba(31,58,61,0.10);}
+.image-card svg{width:100%; height:100%; filter:drop-shadow(0 1px 0.5px rgba(20,15,10,0.18));}
 
 /* ---------- MÓDULO DE CÁLCULO (alternativas) ---------- */
 .choice-stage{display:none; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:8px auto 0;}
@@ -209,7 +217,6 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
 .choice-btn{background:var(--card); border:2px solid var(--sage-soft); border-radius:18px; padding:18px; font-size:1.4rem; font-weight:700; color:var(--ink); box-shadow:var(--shadow-soft); font-family:var(--font-display); transition:transform .12s ease, background .15s ease;}
 .choice-btn:active{transform:scale(0.97); background:var(--sage-soft);}
 .choice-repeat-btn{background:none; color:var(--ink-faint); text-decoration:underline; font-size:.88rem; padding:6px; margin-top:2px;}
-.image-card svg{width:100%; height:100%;}
 
 .back-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
 
@@ -225,7 +232,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
   <!-- ============ BIENVENIDA (primera vez en este dispositivo) ============ -->
   <div class="modal-overlay" id="onboardingModal">
     <div class="modal-card">
-      <div class="home-eyebrow">Memoria AI</div>
+      <div class="home-eyebrow">Memoria</div>
       <h2>Antes de comenzar</h2>
       <p class="modal-sub">Cuéntenos quién va a conversar con la aplicación. Esta información se guarda en este dispositivo y queda disponible en el panel familiar y médico.</p>
       <label class="modal-label" for="onbName">Nombre</label>
@@ -239,7 +246,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
   <!-- ============ SPLASH ============ -->
   <section id="view-splash" class="view active" onclick="skipSplash()">
     <div class="splash-logo-wrap">
-      <img class="splash-logo" src="https://res.cloudinary.com/dway4iqeh/image/upload/v1784773375/WhatsApp_Image_2026-07-22_at_22.20.54_jsiolj.jpg" alt="Memoria AI">
+      <img class="splash-logo" src="https://res.cloudinary.com/dway4iqeh/image/upload/v1784773375/WhatsApp_Image_2026-07-22_at_22.20.54_jsiolj.jpg" alt="Memoria">
     </div>
     <div class="splash-caption">Preparando tu conversación de hoy…</div>
     <div class="splash-dots"><span></span><span></span><span></span></div>
@@ -257,13 +264,14 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <circle cx="26" cy="78" r="4" fill="#6E8F7C" opacity="0.5"/>
       <circle cx="26" cy="42" r="4" fill="#6E8F7C" opacity="0.7"/>
     </svg>
-    <div class="home-eyebrow">Memoria AI</div>
+    <div class="home-eyebrow">Memoria</div>
     <h1 class="home-greeting" id="homeGreeting">Buenos días</h1>
     <p class="home-sub" id="homeSub">¿Conversamos un rato, como todos los días?</p>
     <button class="mic-giant" onclick="startConversation()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
+    <div class="build-tag no-print">v19</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -492,7 +500,7 @@ const ICONS = {
   martillo:   {label:'martillo',    categoria:'herramientas',alias:[], tint:'#ECEAE4',
     svg:`<svg viewBox="0 0 100 100"><rect x="42" y="38" width="13" height="54" rx="5" fill="#8A5F31"/><path d="M20 14 H72 a10 10 0 0 1 10 10 v8 a10 10 0 0 1 -10 10 H20 a10 10 0 0 1 -6-18 Z" fill="#6B6558"/><rect x="20" y="14" width="62" height="28" rx="8" fill="#6B6558"/></svg>`},
   destornillador:{label:'destornillador', categoria:'herramientas', alias:[], tint:'#ECEAE4',
-    svg:`<svg viewBox="0 0 100 100"><rect x="45" y="8" width="10" height="44" fill="#9CA3A8"/><rect x="45" y="8" width="10" height="10" fill="#5B7C99"/><rect x="33" y="50" width="34" height="38" rx="10" fill="#C1743C"/><rect x="33" y="50" width="34" height="8" fill="#8A4E23"/></svg>`},
+    svg:`<svg viewBox="0 0 100 100"><rect x="44" y="6" width="12" height="46" rx="2" fill="#9CA3A8" stroke="#5B6165" stroke-width="1.5"/><line x1="50" y1="10" x2="50" y2="20" stroke="#5B6165" stroke-width="3"/><line x1="45" y1="15" x2="55" y2="15" stroke="#5B6165" stroke-width="3"/><rect x="32" y="50" width="36" height="40" rx="12" fill="#C1743C" stroke="#8A4E23" stroke-width="2"/><rect x="32" y="50" width="36" height="9" fill="#8A4E23"/></svg>`},
   tijeras:    {label:'tijeras',     categoria:'herramientas',alias:[], tint:'#ECEAE4',
     svg:`<svg viewBox="0 0 100 100"><circle cx="24" cy="72" r="11" fill="none" stroke="#C1743C" stroke-width="6"/><circle cx="24" cy="28" r="11" fill="none" stroke="#C1743C" stroke-width="6"/><path d="M33 64 L90 20 L82 18 Z" fill="#9CA3A8"/><path d="M33 36 L90 80 L82 82 Z" fill="#9CA3A8"/></svg>`},
   auto:       {label:'auto',        categoria:'vehiculos',   alias:['carro','coche'], tint:'#E8EEF6',
@@ -500,7 +508,7 @@ const ICONS = {
   bicicleta:  {label:'bicicleta',   categoria:'vehiculos',   alias:['bici'], tint:'#E8EEF6',
     svg:`<svg viewBox="0 0 100 100"><circle cx="24" cy="72" r="17" fill="none" stroke="#2A211A" stroke-width="4"/><circle cx="76" cy="72" r="17" fill="none" stroke="#2A211A" stroke-width="4"/><path d="M24 72 L46 34 L64 34 L76 72 M46 34 L60 72 M38 50 L66 50" stroke="#3E8F8A" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M60 34 L68 22 L78 22" stroke="#3E8F8A" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="20" y="30" width="14" height="6" rx="3" fill="#2A211A"/></svg>`},
   avion:      {label:'avión',       categoria:'vehiculos',   alias:[], tint:'#E8EEF6',
-    svg:`<svg viewBox="0 0 100 100"><path d="M8 54 L60 50 L46 40 L30 40 L20 24 L28 24 L44 40 L60 40 L60 20 L68 20 L72 40 L92 46 L92 54 L72 58 L68 80 L60 80 L60 58 L44 58 L28 76 L20 76 L30 58 L8 54Z" fill="#5B6B7A"/></svg>`},
+    svg:`<svg viewBox="0 0 100 100"><path d="M50 6 L57 40 L92 58 L92 66 L57 56 L57 76 L70 86 L70 92 L50 86 L30 92 L30 86 L43 76 L43 56 L8 66 L8 58 L43 40 Z" fill="#5B6B7A" stroke="#3A4750" stroke-width="1.5" stroke-linejoin="round"/></svg>`},
   bus:        {label:'bus',         categoria:'vehiculos',   alias:['autobús','autobus'], tint:'#E8EEF6',
     svg:`<svg viewBox="0 0 100 100"><rect x="12" y="22" width="76" height="48" rx="10" fill="#C1743C"/><rect x="20" y="30" width="16" height="14" fill="#F4E9D6"/><rect x="42" y="30" width="16" height="14" fill="#F4E9D6"/><rect x="64" y="30" width="16" height="14" fill="#F4E9D6"/><rect x="12" y="50" width="76" height="8" fill="#8A4E23"/><circle cx="30" cy="76" r="9" fill="#2A211A"/><circle cx="70" cy="76" r="9" fill="#2A211A"/></svg>`}
 };
@@ -567,42 +575,57 @@ const ELEVEN_VOICE_ID  = '';  // ← pega aquí el ID de una voz en español LAT
 const ELEVEN_MODEL_ID  = 'eleven_turbo_v2_5'; // modelo multilingüe optimizado para baja latencia = conversación más fluida
                                                // (si prefieres priorizar calidad sobre velocidad, cambia a 'eleven_multilingual_v2')
 
+async function speakElevenLabsChunk(text){
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}/stream?optimize_streaming_latency=2`, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'xi-api-key': ELEVEN_API_KEY,
+      'Accept':'audio/mpeg'
+    },
+    body: JSON.stringify({
+      text,
+      model_id: ELEVEN_MODEL_ID,
+      language_code: 'es', // ayuda al modelo a mantener la pronunciación en español
+      apply_text_normalization: 'auto', // pronuncia mejor números, fechas y horas ("15:30" → "quince treinta")
+      // stability moderada = pronunciación confiable pero sin sonar plana; style algo más
+      // alto = más calidez y expresividad emocional, cercana a como hablaría una persona
+      // afectuosa de verdad. Si en algún momento se siente demasiado cambiante, sube stability.
+      // Si igual notas alguna palabra puntual mal pronunciada, ElevenLabs permite crear un
+      // "Pronunciation Dictionary" en el dashboard de tu cuenta para corregir esa palabra específica.
+      // "speed" controla el ritmo (0.7 = más lento, 1.0 = normal); lo bajamos un poco para
+      // adultos mayores, sin quedar demasiado lento. Si tu cuenta/modelo de ElevenLabs no lo
+      // soporta y deja de sonar la voz, quita "speed:0.93" de aquí abajo — la app seguiría
+      // funcionando con la voz del navegador.
+      voice_settings:{ stability:0.48, similarity_boost:0.85, style:0.55, use_speaker_boost:true, speed:0.93 }
+    })
+  });
+  if(!res.ok) throw new Error('ElevenLabs respondió '+res.status);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  await new Promise(resolve=>{
+    const audio = new Audio(url);
+    audio.onended = ()=>{ URL.revokeObjectURL(url); resolve(); };
+    audio.onerror = ()=>{ URL.revokeObjectURL(url); resolve(); };
+    audio.play().catch(()=>{ URL.revokeObjectURL(url); resolve(); });
+  });
+}
+/* Habla fragmento por fragmento (como una persona real, respirando entre ideas) con
+   pausas más largas entre cada uno — importante para adultos mayores, que necesitan
+   más tiempo para procesar lo que escuchan. Si algún fragmento falla, se cae completo
+   a la voz del navegador (nunca deja a la persona sin respuesta hablada). */
 async function speakElevenLabs(text){
   if(!ELEVEN_API_KEY || !ELEVEN_VOICE_ID) return false; // no configurado: usar voz del navegador
+  const partes = text.split(/(?<=[.!?…])\s+/).filter(Boolean);
+  const fragmentos = partes.length ? partes : [text];
   try{
-    // Se usa el endpoint de streaming (?optimize_streaming_latency) para que el audio
-    // empiece a llegar antes, en vez de esperar a que se genere la frase completa:
-    // eso es lo que hace que la conversación se sienta fluida y no con un silencio raro
-    // entre la pregunta y la respuesta hablada.
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE_ID}/stream?optimize_streaming_latency=3`, {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'xi-api-key': ELEVEN_API_KEY,
-        'Accept':'audio/mpeg'
-      },
-      body: JSON.stringify({
-        text,
-        model_id: ELEVEN_MODEL_ID,
-        language_code: 'es', // ayuda al modelo a mantener la pronunciación en español
-        apply_text_normalization: 'auto', // pronuncia mejor números, fechas y horas ("15:30" → "quince treinta")
-        // stability moderada = pronunciación confiable pero sin sonar plana; style algo más
-        // alto = más calidez y expresividad emocional, cercana a como hablaría una persona
-        // afectuosa de verdad. Si en algún momento se siente demasiado cambiante, sube stability.
-        // Si igual notas alguna palabra puntual mal pronunciada, ElevenLabs permite crear un
-        // "Pronunciation Dictionary" en el dashboard de tu cuenta para corregir esa palabra específica.
-        voice_settings:{ stability:0.48, similarity_boost:0.85, style:0.5, use_speaker_boost:true }
-      })
-    });
-    if(!res.ok) throw new Error('ElevenLabs respondió '+res.status);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    await new Promise(resolve=>{
-      const audio = new Audio(url);
-      audio.onended = ()=>{ URL.revokeObjectURL(url); resolve(); };
-      audio.onerror = ()=>{ URL.revokeObjectURL(url); resolve(); };
-      audio.play().catch(()=>{ URL.revokeObjectURL(url); resolve(); });
-    });
+    for(let i=0; i<fragmentos.length; i++){
+      await speakElevenLabsChunk(fragmentos[i]);
+      if(i < fragmentos.length-1){
+        const esPregunta = /[?¿]\s*$/.test(fragmentos[i]);
+        await new Promise(r=>setTimeout(r, esPregunta ? 495 : 340));
+      }
+    }
     return true;
   }catch(e){
     console.warn('ElevenLabs no disponible, uso la voz del navegador como respaldo:', e);
@@ -651,13 +674,13 @@ function speakBrowserTTS(text){
         if(i >= queue.length){ resolve(); return; }
         const u = new SpeechSynthesisUtterance(queue[i]);
         u.lang = 'es-CL';
-        u.rate = 0.90 + Math.random()*0.07;   // ~0.90–0.97, ritmo pausado y cálido
-        u.pitch = 0.94 + Math.random()*0.06;  // ~0.94–1.00, tono algo más grave y afectuoso
+        u.rate = 0.88 + Math.random()*0.08;   // ~0.88–0.96, pausado pero natural
+        u.pitch = 0.92 + Math.random()*0.10;  // ~0.92–1.02, más variación de tono = entonación menos plana
         u.volume = 1.0;
         if(voice) u.voice = voice;
         const esUltima = i>=queue.length-1;
         const esPregunta = /[?¿]\s*$/.test(queue[i]);
-        const pausaMs = esUltima ? 0 : (esPregunta ? 320 : 160) + Math.round(Math.random()*160);
+        const pausaMs = esUltima ? 0 : (esPregunta ? 495 : 340) + Math.round(Math.random()*160);
         u.onend = ()=>{ i++; setTimeout(speakNext, pausaMs); };
         u.onerror = ()=>{ i++; setTimeout(speakNext, 0); };
         window.speechSynthesis.speak(u);
@@ -744,7 +767,9 @@ function listenAuto(){
           if(ev.results[i].isFinal) finalText += t + ' ';
           else interim += t;
         }
-        // No se muestra la transcripción en pantalla; queda solo interna (en finalText) para el análisis.
+        // Se muestra en pantalla lo reconocido en tiempo real: permite verificar que la
+        // aplicación está entendiendo bien lo que dice la persona.
+        live.textContent = (finalText + interim).trim();
         hint.textContent = 'Le escucho…';
         armWatchdog();
       };
@@ -834,7 +859,7 @@ async function askClaude(systemPrompt, history){
   }
 }
 
-const SYSTEM_PROMPT = `Eres la voz de Memoria AI, una compañía conversacional cálida para adultos mayores en Chile.
+const SYSTEM_PROMPT = `Eres la voz de Memoria, una compañía conversacional cálida para adultos mayores en Chile.
 Hablas en español latinoamericano (chileno), tratando a {name} de usted con cariño, como alguien que realmente disfruta conversar, nunca como un examen ni una entrevista clínica.
 Reglas estrictas de idioma:
 - Usa SIEMPRE español latinoamericano/chileno. Nunca uses "vosotros", "vale", "coger", "ordenador" ni otros modismos de España.
@@ -1008,12 +1033,14 @@ function buildCalculoExercises(){
   const a3=Math.floor(Math.random()*12)+8, b3=Math.floor(Math.random()*9)+3;
   const a4=Math.floor(Math.random()*4)+2, b4=Math.floor(Math.random()*4)+2;
   const dinero=Math.floor(Math.random()*6)+8, gasto=Math.floor(Math.random()*(dinero-2))+2;
+  // "spoken" trae pausas naturales (…) entre el número y la operación, para que la IA
+  // lea el ejercicio más lento y claro; "prompt" es el texto limpio que se ve en pantalla.
   return [
-    {prompt:`¿Cuánto es ${a1} más ${b1}?`, answer:a1+b1},
-    {prompt:`¿Cuánto es ${Math.max(a2,b2)} menos ${Math.min(a2,b2)}?`, answer:Math.max(a2,b2)-Math.min(a2,b2)},
-    {prompt:`¿Cuánto es ${a3} más ${b3}?`, answer:a3+b3},
-    {prompt:`¿Cuánto es ${a4} multiplicado por ${b4}?`, answer:a4*b4},
-    {prompt:`Si tiene ${dinero} mil pesos y gasta ${gasto} mil, ¿cuántos mil pesos le quedan?`, answer:dinero-gasto}
+    {prompt:`¿Cuánto es ${a1} más ${b1}?`, spoken:`¿Cuánto es ${a1}… más ${b1}?`, answer:a1+b1},
+    {prompt:`¿Cuánto es ${Math.max(a2,b2)} menos ${Math.min(a2,b2)}?`, spoken:`¿Cuánto es ${Math.max(a2,b2)}… menos ${Math.min(a2,b2)}?`, answer:Math.max(a2,b2)-Math.min(a2,b2)},
+    {prompt:`¿Cuánto es ${a3} más ${b3}?`, spoken:`¿Cuánto es ${a3}… más ${b3}?`, answer:a3+b3},
+    {prompt:`¿Cuánto es ${a4} multiplicado por ${b4}?`, spoken:`¿Cuánto es ${a4}… multiplicado por ${b4}?`, answer:a4*b4},
+    {prompt:`Si tiene ${dinero} mil pesos y gasta ${gasto} mil, ¿cuántos mil pesos le quedan?`, spoken:`Si tiene ${dinero} mil pesos… y gasta ${gasto} mil… ¿cuántos mil pesos le quedan?`, answer:dinero-gasto}
   ];
 }
 function buildAlternativas(correcta){
@@ -1093,13 +1120,15 @@ async function runCalculoModule(){
   const detalle=[];
 
   setInputMode('choice');
-  await speak(`Ahora hagamos unos ejercicios sencillos de cálculo, ${userName}. Le voy a leer la pregunta y usted toca la alternativa correcta. Tómese el tiempo que necesite.`);
+  const intro = `Ahora hagamos unos ejercicios sencillos de cálculo, ${userName}. Le voy a leer la pregunta y usted toca la alternativa correcta. Tómese el tiempo que necesite.`;
+  bubble.textContent = intro;
+  await speak(intro);
 
   for(let idx=0; idx<exercises.length; idx++){
     const ex = exercises[idx];
     const opciones = buildAlternativas(ex.answer);
     bubble.textContent = ex.prompt;
-    await speak(ex.prompt);
+    await speak(ex.spoken);
 
     let start = performance.now();
     let result = await waitForChoiceOrRepeat(opciones);
@@ -1108,7 +1137,7 @@ async function runCalculoModule(){
     while(result.type==='repeat'){
       repeticiones++;
       hideChoices();
-      await speak('Le repito la pregunta con calma: '+ex.prompt);
+      await speak('Le repito la pregunta con calma… '+ex.spoken);
       start = performance.now();
       result = await waitForChoiceOrRepeat(opciones);
       elapsed = performance.now()-start;
@@ -1129,7 +1158,9 @@ async function runCalculoModule(){
 
   moduleScores.calculo = { puntaje, exactitud, correctas, total:exercises.length, tiempoPromedioSeg, repeticiones, detalle };
   setInputMode('voice');
-  await speak('Muy bien, muchas gracias por resolver esos ejercicios conmigo.');
+  const cierre = 'Muy bien, muchas gracias por resolver esos ejercicios conmigo.';
+  bubble.textContent = cierre;
+  await speak(cierre);
 }
 
 /* =========================================================
@@ -1161,8 +1192,9 @@ async function runMemoriaVisualModule(){
   const usadosEnEsteModulo = new Set(mostradas.map(([k])=>k));
   const [nueva] = pickUnusedIcons(1, usadosEnEsteModulo);
 
-  await speak(`Ahora le voy a mostrar varias imágenes por unos segundos, ${userName}. Obsérvelas con calma.`);
+  const intro = `Ahora le voy a mostrar varias imágenes por unos segundos, ${userName}. Obsérvelas con calma.`;
   bubble.textContent = 'Observe estas imágenes…';
+  await speak(intro);
   showImageGroupOnScreen(mostradas);
   await new Promise(r=>setTimeout(r, 6000));
   hideImageOnScreen();
@@ -1175,9 +1207,9 @@ async function runMemoriaVisualModule(){
   let recordadas = 0;
   mostradas.forEach(([k,item])=>{ if(lowRecall.includes(item.label.toLowerCase())) recordadas++; });
 
+  bubble.textContent = 'De este nuevo grupo, ¿cuál imagen NO le mostré antes?';
   const grupoReconocimiento = shuffleArray([...shuffleArray(mostradas).slice(0,4), nueva]);
   showImageGroupOnScreen(grupoReconocimiento);
-  bubble.textContent = 'De este nuevo grupo, ¿cuál imagen NO le mostré antes?';
   document.getElementById('userLive').textContent = '';
   await speak('De este nuevo grupo, ¿cuál imagen no le mostré antes?');
   const respReconocimiento = await waitForUserTurn();
@@ -1190,7 +1222,9 @@ async function runMemoriaVisualModule(){
   const puntaje = Math.round(memoriaInmediataScore*0.6 + reconocimientoScore*0.4);
 
   moduleScores.memoriaVisual = { puntaje, recordadas, totalMostradas:mostradas.length, reconocioIntrusa };
-  await speak('Muy bien, gracias por su atención.');
+  const cierre = 'Muy bien, gracias por su atención.';
+  bubble.textContent = cierre;
+  await speak(cierre);
 }
 
 function endConversation(early){
@@ -1440,7 +1474,7 @@ function renderDashboard(){
         <h3>Ejercicios sueltos recientes</h3>
         <p class="small-note" style="margin-top:0">${moduleRuns.length} ejercicio(s) practicados fuera de la conversación diaria (Cálculo o Memoria visual).</p>
       </div>` : ''}
-      <p class="small-note">Memoria AI es una herramienta de apoyo y seguimiento, no reemplaza una evaluación médica formal.</p>
+      <p class="small-note">Memoria es una herramienta de apoyo y seguimiento, no reemplaza una evaluación médica formal.</p>
     `;
   }else{
     const rows = sessions.slice().reverse().map(s=>`
@@ -1557,7 +1591,7 @@ function skipSplash(){
 
 function playSplash(){
   const saludoNombre = userName ? `Hola, ${userName}. ` : 'Hola. ';
-  speak(`${saludoNombre}Bienvenida a Memoria AI.`);
+  speak(`${saludoNombre}Bienvenida a Memoria.`);
   splashTimer = setTimeout(()=>{
     if(!splashDone){ splashDone = true; showView('home'); }
   }, 5000);

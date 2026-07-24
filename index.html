@@ -271,7 +271,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v20</div>
+    <div class="build-tag no-print">v21</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -359,10 +359,31 @@ const NAME_KEY = 'memoria-user-name';
 const MODULE_RUNS_KEY = 'memoria-module-runs';
 let userName = '';  // sin valor predefinido: se pide la primera vez que se abre la app
 let userAge = null; // se pide junto con el nombre, la primera vez
+let userGender = 'f'; // 'f' o 'm'; se infiere automáticamente del nombre para tratar a la persona correctamente
 let sessions = [];
 let moduleRuns = []; // ejercicios sueltos (Cálculo/Memoria visual) lanzados desde la barra inferior
 
 const FAMILY_KEY = 'memoria-family-info';
+
+/* Reconocimiento automático de género por nombre, para usar "bienvenido/bienvenida",
+   "cansado/cansada", etc. correctamente. Es una heurística (no siempre acierta con
+   nombres poco comunes), así que se puede corregir más adelante si hace falta. */
+const NOMBRES_MASCULINOS_EXCEPCION = [
+  'luca','matias','tomas','nicolas','andres','ignacio','jesus','elias','isaias','joaquin',
+  'moises','ezequiel','josue','abraham','noe','saul','uriel','emmanuel','jonas','job'
+];
+const NOMBRES_FEMENINOS_TERMINADOS_EN_O = [
+  'rocio','consuelo','amparo','socorro','pilar','carmen','soledad','dolores','mar','luz','flor','esperanza'
+];
+function inferirGenero(nombreCompleto){
+  const primerNombre = (nombreCompleto||'').trim().split(/\s+/)[0]
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(!primerNombre) return 'f';
+  if(NOMBRES_MASCULINOS_EXCEPCION.includes(primerNombre)) return 'm';
+  if(NOMBRES_FEMENINOS_TERMINADOS_EN_O.includes(primerNombre)) return 'f';
+  if(primerNombre.endsWith('a')) return 'f';
+  return 'm';
+}
 
 let onboardingComplete = false; // solo true si hay nombre Y edad guardados juntos (FAMILY_KEY)
 
@@ -374,6 +395,7 @@ function loadStorage(){
       if(info && info.name){
         userName = info.name;
         userAge = info.age || null;
+        userGender = info.gender || inferirGenero(info.name);
         if(userAge) onboardingComplete = true; // ya se completó el cuadro de nombre + edad
       }
     }
@@ -403,7 +425,7 @@ function saveModuleRuns(){
 }
 function saveFamilyInfo(){
   try{
-    localStorage.setItem(FAMILY_KEY, JSON.stringify({ name:userName, age:userAge, updatedAt:new Date().toISOString() }));
+    localStorage.setItem(FAMILY_KEY, JSON.stringify({ name:userName, age:userAge, gender:userGender, updatedAt:new Date().toISOString() }));
   }catch(e){}
 }
 
@@ -421,6 +443,7 @@ function submitOnboarding(){
   if(!nameVal){ document.getElementById('onbName').focus(); return; }
   userName = nameVal;
   userAge = ageVal ? parseInt(ageVal, 10) : null;
+  userGender = inferirGenero(nameVal);
   onboardingComplete = true;
   saveFamilyInfo();
   hideOnboarding();
@@ -432,6 +455,7 @@ function editName(){
   const val = prompt('¿Cómo le gustaría que la llamemos?', userName);
   if(val && val.trim()){
     userName = val.trim();
+    userGender = inferirGenero(userName);
     saveFamilyInfo();
     renderHome();
   }
@@ -560,6 +584,28 @@ function shuffleArray(arr){
   for(let i=a.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
+/* Chrome a veces duplica palabras o frases completas al reconocer voz continua
+   ("si si si gracias gracias, si si gracias gracias"). Esta limpieza quita
+   palabras repetidas seguidas, y si la segunda mitad de la frase resulta ser
+   igual a la primera, se queda solo con una copia. */
+function limpiarRepeticiones(text){
+  if(!text) return text;
+  let palabras = text.trim().split(/\s+/);
+  const sinConsecutivas = [];
+  for(const p of palabras){
+    const anterior = sinConsecutivas[sinConsecutivas.length-1];
+    if(anterior && anterior.toLowerCase()===p.toLowerCase()) continue;
+    sinConsecutivas.push(p);
+  }
+  palabras = sinConsecutivas;
+  const n = palabras.length;
+  if(n>=4 && n%2===0){
+    const mitad1 = palabras.slice(0,n/2).join(' ').toLowerCase();
+    const mitad2 = palabras.slice(n/2).join(' ').toLowerCase();
+    if(mitad1===mitad2) palabras = palabras.slice(0,n/2);
+  }
+  return palabras.join(' ');
+}
 /* Evita que se repita una misma imagen dentro del módulo de Memoria visual
    (entre la tanda mostrada y la imagen nueva de la ronda de reconocimiento).
    Se reinicia al empezar cada conversación o ejercicio suelto nuevo. */
@@ -619,6 +665,7 @@ const ELEVEN_MODEL_ID  = 'eleven_turbo_v2_5'; // modelo multilingüe optimizado 
                                                // (si prefieres priorizar calidad sobre velocidad, cambia a 'eleven_multilingual_v2')
 
 let currentAudioEl = null;   // audio de ElevenLabs actualmente sonando (para poder detenerlo)
+let stopRequested = false;   // se activa al tocar "Terminar": todo el flujo del módulo debe abortar, no solo el sonido
 let speechCancelled = false; // se activa al tocar "Terminar", detiene cualquier fragmento en curso
 
 async function speakElevenLabsChunk(text){
@@ -800,7 +847,7 @@ function listenAuto(){
         try{ recognizer.stop(); }catch(e){}
       }
       listening=false; micBtn.classList.remove('listening');
-      resolve((confirmedText + cycleFinal).replace(/\s+/g,' ').trim());
+      resolve(limpiarRepeticiones((confirmedText + cycleFinal).replace(/\s+/g,' ').trim()));
     };
     manualStopResolve = finish;
 
@@ -840,7 +887,7 @@ function listenAuto(){
         cycleFinal = finalChunk;
         // Se muestra en pantalla lo reconocido en tiempo real: permite verificar que la
         // aplicación está entendiendo bien lo que dice la persona.
-        live.textContent = (confirmedText + cycleFinal + interim).replace(/\s+/g,' ').trim();
+        live.textContent = limpiarRepeticiones((confirmedText + cycleFinal + interim).replace(/\s+/g,' ').trim());
         hint.textContent = 'Le escucho…';
         armWatchdog();
       };
@@ -934,12 +981,13 @@ async function askClaude(systemPrompt, history){
 
 const SYSTEM_PROMPT = `Eres la voz de Memoria, una compañía conversacional cálida para adultos mayores en Chile.
 Hablas en español latinoamericano (chileno), tratando a {name} de usted con cariño, como alguien que realmente disfruta conversar, nunca como un examen ni una entrevista clínica.
+Género de {name}: {gender_word}. Ajusta SIEMPRE correctamente los adjetivos, participios y pronombres en español según corresponda (ejemplos: bienvenido/bienvenida, cansado/cansada, contento/contenta, él/ella, lo/la). Nunca asumas el género por defecto sin fijarte en este dato.
 Reglas estrictas de idioma:
 - Usa SIEMPRE español latinoamericano/chileno. Nunca uses "vosotros", "vale", "coger", "ordenador" ni otros modismos de España.
 Reglas de calidez:
 - Habla como una persona cercana y afectuosa que disfruta genuinamente cada cosa que {name} cuenta, no como un asistente neutro.
 - Usa un tono suave, pausado y cálido, con pequeños gestos verbales de cariño cuando sea natural (por ejemplo, un "qué bonito", "me encanta escuchar eso", "cuénteme más" dicho con calidez, sin sobreactuar ni repetir siempre la misma frase).
-- Nunca apures a {name} ni la hagas sentir evaluada. Si algo no quedó claro, pregúntalo con paciencia y ternura, nunca con impaciencia.
+- Nunca apures a {name}; si algo no quedó claro, pregúntalo con paciencia y ternura, nunca con impaciencia.
 - Varía tus reacciones para que no suenen repetitivas de un turno a otro; una persona real no dice siempre las mismas muletillas.
 Reglas de forma:
 - Responde SOLO con la próxima frase que dirías en voz alta. Nada de explicaciones, nada de comillas, nada de etiquetas.
@@ -1033,6 +1081,7 @@ let currentModuleIndex = 0;
 let moduleScores = { calculo:null, memoriaVisual:null };
 
 async function startConversation(){
+  stopRequested = false;
   currentTurns = [];
   currentModuleIndex = 0;
   moduleScores = { calculo:null, memoriaVisual:null };
@@ -1047,6 +1096,7 @@ async function startConversation(){
 }
 
 async function runModule(){
+  if(stopRequested) return; // se tocó "Terminar": no se sigue avanzando ni hablando
   if(currentModuleIndex >= MODULES.length){
     await finishConversation();
     return;
@@ -1078,7 +1128,7 @@ async function runModule(){
   ]);
   history.push({role:'user', content:`[Objetivo del turno actual — ${mod.titulo}]: ${goalTexto}`});
 
-  const sysPrompt = SYSTEM_PROMPT.replace(/{name}/g, userName);
+  const sysPrompt = SYSTEM_PROMPT.replace(/{name}/g, userName).replace(/{gender_word}/g, userGender==='m' ? 'masculino' : 'femenino');
   let aiText = await askClaude(sysPrompt, history.length ? history : [{role:'user', content:goalTexto}]);
   if(!aiText) aiText = fallbackTexto;
 
@@ -1088,10 +1138,12 @@ async function runModule(){
 
   const speakStart = performance.now();
   await speak(aiText);
+  if(stopRequested) return;
   const aiSpeechEnd = performance.now();
 
   const userStart = performance.now();
   const userText = await waitForUserTurn();
+  if(stopRequested) return;
   const userEnd = performance.now();
 
   currentTurns.push({
@@ -1212,23 +1264,29 @@ async function runCalculoModule(){
   const intro = `Ahora hagamos unos ejercicios sencillos de cálculo, ${userName}. Le voy a leer la pregunta y usted toca la alternativa correcta. Tómese el tiempo que necesite.`;
   bubble.textContent = intro;
   await speak(intro);
+  if(stopRequested) return;
 
   for(let idx=0; idx<exercises.length; idx++){
+    if(stopRequested) return;
     const ex = exercises[idx];
     const opciones = buildAlternativas(ex.answer);
     bubble.textContent = ex.prompt;
     await speak(ex.spoken);
+    if(stopRequested) return;
 
     let start = performance.now();
     let result = await waitForChoiceOrRepeat(opciones);
+    if(stopRequested) return;
     let elapsed = performance.now()-start;
 
     while(result.type==='repeat'){
       repeticiones++;
       hideChoices();
       await speak('Le repito la pregunta con calma… '+ex.spoken);
+      if(stopRequested) return;
       start = performance.now();
       result = await waitForChoiceOrRepeat(opciones);
+      if(stopRequested) return;
       elapsed = performance.now()-start;
     }
     hideChoices();
@@ -1277,45 +1335,54 @@ function hideImageOnScreen(){
 async function runMemoriaVisualModule(){
   resetModuleUI();
   const bubble = document.getElementById('aiBubble');
-  const mostradas = pickUnusedIcons(6);
+  // Máximo 4 imágenes a la vez: son adultos mayores, más que eso satura la atención.
+  const mostradas = pickUnusedIcons(4);
   const usadosEnEsteModulo = new Set(mostradas.map(([k])=>k));
   const [nueva] = pickUnusedIcons(1, usadosEnEsteModulo);
 
   const intro = `Ahora le voy a mostrar varias imágenes por unos segundos, ${userName}. Obsérvelas con calma.`;
   bubble.textContent = 'Observe estas imágenes…';
   await speak(intro);
+  if(stopRequested) return;
   showImageGroupOnScreen(mostradas);
   await new Promise(r=>setTimeout(r, 7000));
   hideImageOnScreen();
+  if(stopRequested) return;
 
   // Ronda 1: recuerdo libre de lo observado.
   bubble.textContent = '¿Cuáles de esas imágenes recuerda haber visto?';
   document.getElementById('userLive').textContent = '';
   await speak('¿Cuáles de esas imágenes recuerda haber visto?');
+  if(stopRequested) return;
   const respRecall = await waitForUserTurn();
+  if(stopRequested) return;
   const lowRecall = (respRecall||'').toLowerCase();
   let recordadas = 0;
   mostradas.forEach(([k,item])=>{ if(lowRecall.includes(item.label.toLowerCase())) recordadas++; });
 
-  // Ronda 2: identificar cuál imagen del grupo original ya no está (falta).
+  // Ronda 2: identificar cuál imagen del grupo original ya no está (falta). Máximo 3 en pantalla.
   const faltante = mostradas[Math.floor(Math.random()*mostradas.length)];
   const grupoConFaltante = mostradas.filter(([k])=>k!==faltante[0]);
   bubble.textContent = 'Le muestro casi las mismas imágenes de antes… ¿cuál falta ahora?';
   showImageGroupOnScreen(shuffleArray(grupoConFaltante));
   document.getElementById('userLive').textContent = '';
   await speak('Le muestro casi las mismas imágenes de antes. ¿Cuál de ellas falta ahora?');
+  if(stopRequested) return;
   const respFaltante = await waitForUserTurn();
+  if(stopRequested) return;
   const lowFaltante = (respFaltante||'').toLowerCase();
   const acertoFaltante = lowFaltante.includes(faltante[1].label.toLowerCase()) || (faltante[1].alias||[]).some(a=>lowFaltante.includes(a));
   hideImageOnScreen();
 
-  // Ronda 3: reconocer cuál imagen NUEVA (nunca mostrada) aparece en el grupo.
+  // Ronda 3: reconocer cuál imagen NUEVA (nunca mostrada) aparece en el grupo. Máximo 4 en pantalla.
   bubble.textContent = 'De este nuevo grupo, ¿cuál imagen NO le mostré antes?';
-  const grupoReconocimiento = shuffleArray([...shuffleArray(mostradas).slice(0,5), nueva]);
+  const grupoReconocimiento = shuffleArray([...shuffleArray(mostradas).slice(0,3), nueva]);
   showImageGroupOnScreen(grupoReconocimiento);
   document.getElementById('userLive').textContent = '';
   await speak('De este nuevo grupo, ¿cuál imagen no le mostré antes?');
+  if(stopRequested) return;
   const respReconocimiento = await waitForUserTurn();
+  if(stopRequested) return;
   const lowReconocimiento = (respReconocimiento||'').toLowerCase();
   const reconocioIntrusa = lowReconocimiento.includes(nueva[1].label.toLowerCase()) || (nueva[1].alias||[]).some(a=>lowReconocimiento.includes(a));
   hideImageOnScreen();
@@ -1332,8 +1399,10 @@ async function runMemoriaVisualModule(){
 }
 
 function endConversation(early){
+  stopRequested = true;
   stopAllSpeech();
   if(recognizer){ try{ recognizer.stop(); }catch(e){} }
+  if(manualStopResolve) manualStopResolve();
   resetModuleUI();
   setInputMode('voice');
   if(early && currentTurns.length < 3){ showView('home'); return; }
@@ -1381,6 +1450,7 @@ async function finishConversation(){
    índice cognitivo de las conversaciones diarias completas.
 ========================================================= */
 async function startStandaloneModule(type){
+  stopRequested = false;
   currentTurns = [];
   currentModuleIndex = 0;
   moduleScores = { calculo:null, memoriaVisual:null };
@@ -1695,7 +1765,8 @@ function skipSplash(){
 
 function playSplash(){
   const saludoNombre = userName ? `Hola, ${userName}. ` : 'Hola. ';
-  speak(`${saludoNombre}Bienvenida a Memoria.`);
+  const bienvenida = userGender==='m' ? 'Bienvenido a Memoria.' : 'Bienvenida a Memoria.';
+  speak(`${saludoNombre}${bienvenida}`);
   splashTimer = setTimeout(()=>{
     if(!splashDone){ splashDone = true; showView('home'); }
   }, 5000);

@@ -271,7 +271,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v22</div>
+    <div class="build-tag no-print">v23</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -483,7 +483,7 @@ function formatTrio(trio){ return `${trio[0]}, ${trio[1]} y ${trio[2]}`; }
 const MODULES = [
   {id:'saludo', titulo:'Saludo', type:'conversacional', variants:[
     {goal:'Saluda con calidez a {name} y pregúntale cómo amaneció o cómo se siente en este momento.', fallback:'Qué gusto conversar con usted, {name}. ¿Cómo amaneció hoy?'},
-    {goal:'Saluda con cariño a {name} y pregúntale cómo ha estado su día hasta ahora.', fallback:'Hola, {name}, qué alegría escucharla. ¿Cómo ha estado su día?'}
+    {goal:'Saluda con cariño a {name} y pregúntale cómo ha estado su día hasta ahora.', fallback:'Hola, {name}, qué alegría escuchar{lo}. ¿Cómo ha estado su día?'}
   ]},
   {id:'rutina', titulo:'Rutina de hoy', type:'conversacional', variants:[
     {goal:'Pregunta de forma natural qué desayunó y qué planes tiene para el resto del día.', fallback:'Cuénteme, con calma, ¿qué desayunó esta mañana? ¿Tiene algún plan lindo para hoy?'},
@@ -491,7 +491,7 @@ const MODULES = [
     {goal:'Pregunta con cariño cómo durmió anoche y qué le gustaría hacer si tuviera la tarde libre.', fallback:'¿Cómo durmió anoche? Si tuviera la tarde libre, ¿qué le gustaría hacer?'}
   ]},
   {id:'memoria_reciente', titulo:'Memoria reciente', type:'conversacional', variants:[
-    {goal:'Pregunta con naturalidad qué almorzó ayer, o quién la llamó o visitó esta semana.', fallback:'¿Qué almorzó ayer? ¿La llamó o la visitó alguien querido esta semana?'},
+    {goal:'Pregunta con naturalidad qué almorzó ayer, o quién {lo} llamó o visitó esta semana.', fallback:'¿Qué almorzó ayer? ¿{Lo} llamó o visitó alguien querido esta semana?'},
     {goal:'Pregunta con curiosidad qué hizo el fin de semana pasado, o algo lindo que haya pasado esta semana.', fallback:'¿Qué hizo el fin de semana pasado? ¿Pasó algo lindo esta semana?'},
     {goal:'Pregunta con cariño si vio algún programa de televisión o escuchó algo en la radio últimamente, y qué le pareció.', fallback:'¿Ha visto algún programa de televisión últimamente? ¿Qué le pareció?'}
   ]},
@@ -513,18 +513,18 @@ const MODULES = [
     {goal:'Plantea con tono ligero: si suena el teléfono y no reconoce el número, ¿qué haría?', fallback:'Si suena el teléfono y no reconoce el número que llama, ¿qué haría?'}
   ]},
   {id:'narracion', titulo:'Un recuerdo', type:'conversacional', variants:[
-    {goal:'Pide con cariño que cuente algún recuerdo bonito de su infancia o juventud.', fallback:'Cuénteme algún recuerdo bonito de su infancia o de cuando era joven, me encanta escucharla.'},
+    {goal:'Pide con cariño que cuente algún recuerdo bonito de su infancia o juventud.', fallback:'Cuénteme algún recuerdo bonito de su infancia o de cuando era joven, me encanta escuchar{lo}.'},
     {goal:'Pide con cariño que cuente cómo conoció a alguien muy importante en su vida.', fallback:'¿Me cuenta cómo conoció a alguien muy importante en su vida?'},
     {goal:'Pide con ternura que cuente algún recuerdo bonito de alguna celebración o fiesta familiar.', fallback:'¿Recuerda alguna celebración o fiesta familiar especialmente bonita? Cuénteme de ella.'}
   ]},
   {id:'estado_animo', titulo:'Cómo se siente', type:'conversacional', variants:[
-    {goal:'Pregunta con genuina calidez cómo se ha sentido de ánimo últimamente, si ha estado más contenta, más cansada, o distinta.', fallback:'¿Cómo se ha sentido de ánimo estos días, {name}?'},
-    {goal:'Pregunta con cariño qué es algo que la haya hecho sonreír últimamente.', fallback:'¿Qué es algo que la haya hecho sonreír últimamente?'}
+    {goal:'Pregunta con genuina calidez cómo se ha sentido de ánimo últimamente: con más energía, con más cansancio, o distinto que de costumbre. Usa el género correcto de {name} al preguntarlo.', fallback:'¿Cómo se ha sentido de ánimo estos días, {name}?'},
+    {goal:'Pregunta con cariño qué es algo que {lo} haya hecho sonreír últimamente.', fallback:'¿Qué es algo que {lo} haya hecho sonreír últimamente?'}
   ]},
   {id:'calculo', titulo:'Cálculo', type:'calculo', standaloneOnly:true},
   {id:'memoria_visual', titulo:'Memoria visual', type:'memoria_visual', standaloneOnly:true},
   {id:'gratitud', titulo:'Algo lindo', type:'conversacional', variants:[
-    {goal:'Pregunta con calidez si hay algo que esté esperando con ganas los próximos días, o algo por lo que se sienta agradecida.', fallback:'¿Hay algo lindo que esté esperando con ganas estos días?'},
+    {goal:'Pregunta con calidez si hay algo que esté esperando con ganas los próximos días, o algo por lo que sienta gratitud en este momento. Usa el género correcto de {name} al preguntarlo.', fallback:'¿Hay algo lindo que esté esperando con ganas estos días?'},
     {goal:'Pregunta con cariño quién es una persona importante en su vida hoy y por qué.', fallback:'¿Quién es una persona importante en su vida hoy? ¿Por qué?'}
   ]},
   {id:'atencion_recuerdo', titulo:'Atención', type:'conversacional', variants:[
@@ -532,8 +532,8 @@ const MODULES = [
   ]},
   {id:'despedida', titulo:'Despedida', type:'conversacional', variants:[
     {goal:'Agradece la conversación con calidez genuina, dile que fue un gusto conversar y pregúntale, con cariño, si le parece que vuelvan a hablar mañana.', fallback:'Muchas gracias por conversar conmigo, {name}. ¿Le parece si hablamos de nuevo mañana?'},
-    {goal:'Agradece la conversación con ternura y despídete deseándole un lindo resto de día.', fallback:'Fue realmente lindo conversar con usted, {name}. Que tenga un día precioso, la espero pronto de nuevo.'},
-    {goal:'Agradece con calidez el tiempo que compartió conversando y dile que la vas a estar esperando para la próxima charla.', fallback:'Gracias por este ratito de conversación, {name}. Aquí voy a estar esperándola para la próxima.'}
+    {goal:'Agradece la conversación con ternura y despídete deseándole un lindo resto de día.', fallback:'Fue realmente lindo conversar con usted, {name}. Que tenga un día precioso, {lo} espero pronto de nuevo.'},
+    {goal:'Agradece con calidez el tiempo que compartió conversando y dile que {lo} vas a estar esperando para la próxima charla.', fallback:'Gracias por este ratito de conversación, {name}. Aquí voy a estar esperándo{lo} para la próxima.'}
   ]}
 ];
 /* MODULES_CONVERSACION: el flujo que corre "Conversar" — solo módulos conversacionales,
@@ -591,13 +591,16 @@ function shuffleArray(arr){
   for(let i=a.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
-/* Chrome a veces duplica palabras o frases completas al reconocer voz continua
-   ("si si si gracias gracias, si si gracias gracias"). Esta limpieza quita
-   palabras repetidas seguidas, y si la segunda mitad de la frase resulta ser
-   igual a la primera, se queda solo con una copia. */
+/* Chrome a veces duplica palabras o bloques completos al reconocer voz continua,
+   típicamente como "prefijos crecientes" que se repiten: "voy a" → "voy a almorzar" →
+   "voy a almorzar puré"... quedando todo concatenado. Este algoritmo recorre palabra
+   por palabra y, cada vez que el bloque acumulado hasta ahora coincide exactamente
+   con las palabras que vienen justo después, descarta el bloque repetido y sigue
+   desde la continuación (que es la versión más completa). */
 function limpiarRepeticiones(text){
   if(!text) return text;
   let palabras = text.trim().split(/\s+/);
+  // 1) quita palabras inmediatamente repetidas ("si si" → "si")
   const sinConsecutivas = [];
   for(const p of palabras){
     const anterior = sinConsecutivas[sinConsecutivas.length-1];
@@ -605,13 +608,17 @@ function limpiarRepeticiones(text){
     sinConsecutivas.push(p);
   }
   palabras = sinConsecutivas;
-  const n = palabras.length;
-  if(n>=4 && n%2===0){
-    const mitad1 = palabras.slice(0,n/2).join(' ').toLowerCase();
-    const mitad2 = palabras.slice(n/2).join(' ').toLowerCase();
-    if(mitad1===mitad2) palabras = palabras.slice(0,n/2);
+  // 2) colapsa bloques que se repiten como prefijo de lo que sigue
+  let bloque = [];
+  for(let i=0; i<palabras.length; i++){
+    bloque.push(palabras[i]);
+    const len = bloque.length;
+    const siguiente = palabras.slice(i+1, i+1+len);
+    if(siguiente.length===len && siguiente.every((w,idx)=>w.toLowerCase()===bloque[idx].toLowerCase())){
+      bloque = []; // el bloque completo se repite justo a continuación: se descarta y se sigue desde ahí
+    }
   }
-  return palabras.join(' ');
+  return bloque.join(' ');
 }
 /* Evita que se repita una misma imagen dentro del módulo de Memoria visual
    (entre la tanda mostrada y la imagen nueva de la ronda de reconocimiento).
@@ -830,6 +837,86 @@ const MAX_WAIT_MS = 26000;  // tiempo de espera si todavía no empieza a respond
 const MAX_TURN_MS = 100000; // tope absoluto de seguridad por turno
 let manualStopResolve = null; // permite al botón forzar el cierre del turno actual
 
+/* =========================================================
+   MOTOR DE ANÁLISIS ACÚSTICO (Web Audio API, corre en el navegador)
+   Aproxima, con procesamiento de señal real (no simulado):
+   - Prosodia: variabilidad del tono de voz (F0) durante la respuesta.
+   - Temblor: variabilidad del volumen (RMS) durante la respuesta.
+   No reemplaza un análisis clínico completo (jitter/shimmer, formantes,
+   openSMILE/Praat), que requeriría procesamiento fuera del navegador — pero
+   son métricas reales, calculadas a partir del audio de cada respuesta.
+========================================================= */
+let audioCtx = null, micStream = null, analyserNode = null;
+let acousticSamples = null, acousticTimer = null;
+let lastAcousticStats = null;
+
+async function ensureAudioAnalyser(){
+  if(analyserNode) return true;
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 2048;
+    source.connect(analyserNode);
+    return true;
+  }catch(e){
+    console.warn('Análisis acústico no disponible en este navegador/dispositivo:', e);
+    return false;
+  }
+}
+// Estima el tono fundamental (F0) por autocorrelación sobre la forma de onda —
+// una técnica real y estándar de procesamiento de señal, liviana para el navegador.
+function estimarPitch(buffer, sampleRate){
+  const SIZE = buffer.length;
+  let rms = 0;
+  for(let i=0;i<SIZE;i++) rms += buffer[i]*buffer[i];
+  rms = Math.sqrt(rms/SIZE);
+  if(rms < 0.012) return {pitch:null, rms}; // silencio o ruido de fondo: no hay tono que medir
+  let bestOffset = -1, bestCorr = 0;
+  const minLag = Math.floor(sampleRate/500); // ~500Hz máx
+  const maxLag = Math.floor(sampleRate/70);  // ~70Hz mín
+  for(let lag=minLag; lag<=maxLag; lag+=2){ // paso de 2 para aligerar el cálculo
+    let corr = 0;
+    for(let i=0;i<SIZE-lag;i+=2) corr += buffer[i]*buffer[i+lag];
+    if(corr > bestCorr){ bestCorr = corr; bestOffset = lag; }
+  }
+  if(bestOffset<=0) return {pitch:null, rms};
+  return {pitch: sampleRate/bestOffset, rms};
+}
+function startAcousticSampling(){
+  if(!analyserNode) return;
+  acousticSamples = {amp:[], pitch:[]};
+  const buffer = new Float32Array(analyserNode.fftSize);
+  clearInterval(acousticTimer);
+  acousticTimer = setInterval(()=>{
+    try{
+      analyserNode.getFloatTimeDomainData(buffer);
+      const {pitch, rms} = estimarPitch(buffer, audioCtx.sampleRate);
+      acousticSamples.amp.push(rms);
+      if(pitch) acousticSamples.pitch.push(pitch);
+    }catch(e){}
+  }, 130);
+}
+function stopAcousticSampling(){
+  clearInterval(acousticTimer); acousticTimer=null;
+  const samples = acousticSamples;
+  acousticSamples = null;
+  if(!samples || samples.amp.length<3){ lastAcousticStats = null; return; }
+  const coefVariacion = (arr)=>{
+    if(arr.length<3) return null;
+    const mean = arr.reduce((a,b)=>a+b,0)/arr.length;
+    if(mean<=0) return null;
+    const variance = arr.reduce((a,b)=>a+(b-mean)**2,0)/arr.length;
+    return +(Math.sqrt(variance)/mean).toFixed(3);
+  };
+  lastAcousticStats = {
+    temblorAprox: coefVariacion(samples.amp),   // variabilidad del volumen
+    prosodiaVar: coefVariacion(samples.pitch)   // variabilidad del tono
+  };
+}
+
+
 function listenAuto(){
   return new Promise(resolve=>{
     if(!SpeechRecognitionAPI){ resolve(''); return; }
@@ -849,6 +936,7 @@ function listenAuto(){
       settled = true;
       clearWatchdog();
       manualStopResolve = null;
+      stopAcousticSampling();
       if(recognizer){
         recognizer.onresult=null; recognizer.onend=null; recognizer.onerror=null;
         recognizer.onstart=null; recognizer.onspeechstart=null;
@@ -883,7 +971,7 @@ function listenAuto(){
       recognizer.onresult = (ev)=>{
         const primeraVezQueHabla = !hasSpoken;
         hasSpoken = true;
-        if(primeraVezQueHabla){ listening=true; micBtn.classList.add('listening'); }
+        if(primeraVezQueHabla){ listening=true; micBtn.classList.add('listening'); startAcousticSampling(); }
         // Se recalcula TODO el texto final de este único ciclo desde el resultado 0 cada vez
         // (nunca se suma con += entre ciclos, porque este ciclo nunca se reinicia una vez
         // que la persona empezó a hablar).
@@ -902,7 +990,7 @@ function listenAuto(){
         armWatchdog();
       };
       recognizer.onspeechstart = ()=>{
-        if(!hasSpoken){ listening=true; micBtn.classList.add('listening'); }
+        if(!hasSpoken){ listening=true; micBtn.classList.add('listening'); startAcousticSampling(); }
         hasSpoken = true;
         armWatchdog();
       };
@@ -966,6 +1054,7 @@ function submitTyped(){
 function waitForUserTurn(){
   const typeActive = document.getElementById('typeFallback').classList.contains('active');
   if(typeActive){
+    lastAcousticStats = null; // en modo escribir no hay audio que analizar
     document.getElementById('micHint').textContent = 'Escribe tu respuesta y toca enviar';
     return new Promise(resolve=>{ typedResolve = resolve; });
   }
@@ -1020,10 +1109,11 @@ Reglas de forma:
 const FILLERS = /\b(eh+|em+|mm+|este|o sea|osea|bueno\.\.\.|pucha|cachai|ehh+)\b/gi;
 
 function analyzeTranscript(turns){
-  // turns: [{module, aiText, userText, latencyMs, userDurationMs}]
+  // turns: [{module, aiText, userText, latencyMs, userDurationMs, acoustic}]
   let totalWords=0, uniqueWords=new Set(), fillerCount=0, longPauses=0, pauseSum=0;
   let totalUserDurationMs=0;
   let compliantTurns=0;
+  let prosodiaSum=0, prosodiaN=0, temblorSum=0, temblorN=0;
 
   turns.forEach(t=>{
     const words = (t.userText||'').trim().split(/\s+/).filter(Boolean);
@@ -1034,6 +1124,10 @@ function analyzeTranscript(turns){
     if(t.latencyMs && t.latencyMs > 3000){ longPauses++; pauseSum += t.latencyMs; }
     if(t.userDurationMs) totalUserDurationMs += t.userDurationMs;
     if(words.length >= 3) compliantTurns++;
+    if(t.acoustic){
+      if(t.acoustic.prosodiaVar!=null){ prosodiaSum += t.acoustic.prosodiaVar; prosodiaN++; }
+      if(t.acoustic.temblorAprox!=null){ temblorSum += t.acoustic.temblorAprox; temblorN++; }
+    }
   });
 
   const lexicalDiversity = totalWords>0 ? Math.min(100, Math.round((uniqueWords.size/totalWords)*100)) : 0;
@@ -1084,10 +1178,14 @@ function analyzeTranscript(turns){
     Math.max(0, 10 - Math.round(fluencyPenalty/4))
   )));
 
+  const prosodiaVar = prosodiaN>0 ? +(prosodiaSum/prosodiaN).toFixed(3) : null;
+  const temblorAprox = temblorN>0 ? +(temblorSum/temblorN).toFixed(3) : null;
+
   return {
     totalWords, wordsPerMin, longPauses, avgPauseSec, lexicalDiversity, fillerCount,
     memoriaScore, orientacionScore, comprensionScore, coherenciaScore, indiceCognitivo,
-    durationSec: Math.round(totalUserDurationMs/1000)
+    durationSec: Math.round(totalUserDurationMs/1000),
+    prosodiaVar, temblorAprox
   };
 }
 
@@ -1110,6 +1208,7 @@ async function startConversation(){
   resetModuleUI();
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
+  ensureAudioAnalyser(); // no se espera: si falla o no hay permiso, la conversación sigue igual
   await runModule();
 }
 
@@ -1129,11 +1228,14 @@ async function runModule(){
   bubble.textContent = '…';
 
   // Se elige una variante de pregunta al azar para este módulo (así la conversación
-  // no es siempre igual), y se rellenan los datos de la persona y el trío de palabras.
+  // no es siempre igual), y se rellenan los datos de la persona, el trío de palabras
+  // y el pronombre correcto según el género (lo/la).
   const variante = mod.variants[Math.floor(Math.random()*mod.variants.length)];
   const trioTexto = formatTrio(trioPalabrasSesion);
-  const goalTexto = variante.goal.replace(/{name}/g, userName).replace(/{trio}/g, trioTexto);
-  const fallbackTexto = variante.fallback.replace(/{name}/g, userName).replace(/{trio}/g, trioTexto);
+  const loLa = userGender==='m' ? 'lo' : 'la';
+  const loLaCap = userGender==='m' ? 'Lo' : 'La';
+  const goalTexto = variante.goal.replace(/{name}/g, userName).replace(/{trio}/g, trioTexto).replace(/{lo}/g, loLa).replace(/{Lo}/g, loLaCap);
+  const fallbackTexto = variante.fallback.replace(/{name}/g, userName).replace(/{trio}/g, trioTexto).replace(/{lo}/g, loLa).replace(/{Lo}/g, loLaCap);
 
   const history = currentTurns.slice(-3).flatMap(t=>[
     {role:'assistant', content:t.aiText},
@@ -1163,7 +1265,8 @@ async function runModule(){
     module: mod.id,
     aiText, userText,
     latencyMs: userStart - aiSpeechEnd,
-    userDurationMs: Math.max(userEnd - userStart, 1200)
+    userDurationMs: Math.max(userEnd - userStart, 1200),
+    acoustic: lastAcousticStats
   });
 
   currentModuleIndex++;
@@ -1474,6 +1577,7 @@ async function startStandaloneModule(type){
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
   document.getElementById('progressFill').style.width = '0%';
+  if(type==='memoria_visual') ensureAudioAnalyser(); // solo hace falta para el que usa voz
 
   const titulos = {calculo:'Cálculo', memoria_visual:'Memoria visual'};
   document.getElementById('modulePill').textContent = titulos[type] || 'Ejercicio';
@@ -1676,6 +1780,8 @@ function renderDashboard(){
         <td>${s.wordsPerMin}</td>
         <td>${s.longPauses}</td>
         <td>${s.fillerCount}</td>
+        <td>${s.prosodiaVar!=null ? s.prosodiaVar : '—'}</td>
+        <td>${s.temblorAprox!=null ? s.temblorAprox : '—'}</td>
         <td>${s.calculo ? s.calculo.puntaje+'%' : '—'}</td>
         <td>${s.memoriaVisual ? s.memoriaVisual.puntaje+'%' : '—'}</td>
       </tr>`).join('');
@@ -1701,11 +1807,11 @@ function renderDashboard(){
         <h3>Historial de variables por sesión</h3>
         <div style="overflow-x:auto;">
         <table class="vartable">
-          <tr><th>Fecha</th><th>Índice</th><th>Memoria</th><th>Orient.</th><th>Compr.</th><th>Coher.</th><th>Léxico</th><th>Pal/min</th><th>Pausas</th><th>Muletillas</th><th>Cálculo</th><th>Mem. visual</th></tr>
-          ${rows || '<tr><td colspan="12">Sin sesiones registradas aún</td></tr>'}
+          <tr><th>Fecha</th><th>Índice</th><th>Memoria</th><th>Orient.</th><th>Compr.</th><th>Coher.</th><th>Léxico</th><th>Pal/min</th><th>Pausas</th><th>Muletillas</th><th>Prosodia</th><th>Temblor</th><th>Cálculo</th><th>Mem. visual</th></tr>
+          ${rows || '<tr><td colspan="14">Sin sesiones registradas aún</td></tr>'}
         </table>
         </div>
-        <p class="small-note">Variables acústicas y lingüísticas completas (prosodia, temblor, latencia por turno, anomias) requerirían integración con motores dedicados de análisis de audio (p. ej. openSMILE/librosa) y de PLN (spaCy/BERT en español) en el backend clínico — no incluidos en este prototipo de interfaz.</p>
+        <p class="small-note">Prosodia y temblor se calculan con procesamiento de señal real (Web Audio API, autocorrelación) directamente en el navegador durante cada respuesta — no son valores simulados. Son una aproximación liviana: un análisis acústico clínico completo (jitter, shimmer, formantes, como el que entregan openSMILE o Praat) y un análisis lingüístico completo de anomias (PLN con spaCy/BERT en español) requerirían procesamiento fuera del navegador, en un backend dedicado.</p>
       </div>
       <div class="dash-section">
         <h3>Ejercicios sueltos (fuera de la conversación diaria)</h3>

@@ -294,7 +294,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v34</div>
+    <div class="build-tag no-print">v35</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -392,6 +392,15 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <div class="settings-options">
         <button class="settings-opt" data-setting="contrast" data-value="normal" onclick="setSetting('contrast','normal')">Normal</button>
         <button class="settings-opt" data-setting="contrast" data-value="alto" onclick="setSetting('contrast','alto')">Alto contraste</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Análisis acústico avanzado</h3>
+      <p class="small-note" style="margin-top:0">Mide prosodia y temblor de la voz durante cada respuesta, para completar esos datos en el panel médico. Es experimental: en algunos dispositivos puede interferir levemente con el reconocimiento de voz, por eso viene apagado por defecto.</p>
+      <div class="settings-options">
+        <button class="settings-opt" data-setting="acousticEnabled" data-value="0" onclick="setSetting('acousticEnabled','0')">Apagado</button>
+        <button class="settings-opt" data-setting="acousticEnabled" data-value="1" onclick="setSetting('acousticEnabled','1')">Encendido</button>
       </div>
     </div>
   </section>
@@ -675,7 +684,7 @@ function saveVariantQueues(){
    AJUSTES (tamaño de texto, tamaño de imágenes, velocidad de voz, contraste)
 ========================================================= */
 const SETTINGS_KEY = 'memoria-settings';
-let appSettings = { fontScale:1, imageScale:1, voiceRate:1, contrast:'normal' };
+let appSettings = { fontScale:1, imageScale:1, voiceRate:1, contrast:'normal', acousticEnabled:0 };
 function loadSettings(){
   try{
     const raw = localStorage.getItem(SETTINGS_KEY);
@@ -1462,6 +1471,7 @@ async function startConversation(){
   resetModuleUI();
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
+  if(appSettings.acousticEnabled) ensureAudioAnalyser(); // opcional: no se espera, y solo si está encendido en Ajustes
   await runModule();
 }
 
@@ -1853,6 +1863,7 @@ async function startStandaloneModule(type){
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
   document.getElementById('progressFill').style.width = '0%';
+  if(type==='memoria_visual' && appSettings.acousticEnabled) ensureAudioAnalyser();
 
   const titulos = {calculo:'Cálculo', memoria_visual:'Memoria visual'};
   document.getElementById('modulePill').textContent = titulos[type] || 'Ejercicio';
@@ -2042,23 +2053,41 @@ function renderDashboard(){
       <p class="small-note">Memoria es una herramienta de apoyo y seguimiento, no reemplaza una evaluación médica formal.</p>
     `;
   }else{
-    const rows = sessions.slice().reverse().map(s=>`
-      <tr>
-        <td>${new Date(s.date).toLocaleDateString('es-CL')}</td>
-        <td>${s.indiceCognitivo}</td>
-        <td>${s.memoriaScore}%</td>
-        <td>${s.orientacionScore}%</td>
-        <td>${s.comprensionScore}%</td>
-        <td>${s.coherenciaScore}%</td>
-        <td>${s.lexicalDiversity}%</td>
-        <td>${s.wordsPerMin}</td>
-        <td>${s.longPauses}</td>
-        <td>${s.fillerCount}</td>
-        <td>${s.prosodiaVar!=null ? s.prosodiaVar : '—'}</td>
-        <td>${s.temblorAprox!=null ? s.temblorAprox : '—'}</td>
-        <td>${s.calculo ? s.calculo.puntaje+'%' : '—'}</td>
-        <td>${s.memoriaVisual ? s.memoriaVisual.puntaje+'%' : '—'}</td>
-      </tr>`).join('');
+    const historialUnificado = [
+      ...sessions.map(s=>({...s, filaTipo:'conversacion'})),
+      ...moduleRuns.map(r=>({date:r.date, filaTipo:r.type, puntajeSuelto:r.puntaje}))
+    ].sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+    const rows = historialUnificado.map(item=>{
+      if(item.filaTipo==='conversacion'){
+        return `<tr>
+          <td>${new Date(item.date).toLocaleDateString('es-CL')}</td>
+          <td>Conversación</td>
+          <td>${item.indiceCognitivo}</td>
+          <td>${item.memoriaScore}%</td>
+          <td>${item.orientacionScore}%</td>
+          <td>${item.comprensionScore}%</td>
+          <td>${item.coherenciaScore}%</td>
+          <td>${item.lexicalDiversity}%</td>
+          <td>${item.wordsPerMin}</td>
+          <td>${item.longPauses}</td>
+          <td>${item.fillerCount}</td>
+          <td>${item.prosodiaVar!=null ? item.prosodiaVar : '—'}</td>
+          <td>${item.temblorAprox!=null ? item.temblorAprox : '—'}</td>
+          <td>${item.calculo ? item.calculo.puntaje+'%' : '—'}</td>
+          <td>${item.memoriaVisual ? item.memoriaVisual.puntaje+'%' : '—'}</td>
+        </tr>`;
+      }
+      const esCalculo = item.filaTipo==='calculo';
+      return `<tr>
+        <td>${new Date(item.date).toLocaleDateString('es-CL')}</td>
+        <td>${esCalculo?'Cálculo':'Memoria visual'}</td>
+        <td>${item.puntajeSuelto}</td>
+        <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+        <td>${esCalculo? item.puntajeSuelto+'%' : '—'}</td>
+        <td>${!esCalculo? item.puntajeSuelto+'%' : '—'}</td>
+      </tr>`;
+    }).join('');
     content.innerHTML = `
       <div class="dash-section">
         <div class="alert-banner alert-${alert.level}"><div class="alert-dot"></div><div>${alert.text}</div></div>
@@ -2081,27 +2110,13 @@ function renderDashboard(){
         <h3>Historial de variables por sesión</h3>
         <div style="overflow-x:auto;">
         <table class="vartable">
-          <tr><th>Fecha</th><th>Índice</th><th>Memoria</th><th>Orient.</th><th>Compr.</th><th>Coher.</th><th>Léxico</th><th>Pal/min</th><th>Pausas</th><th>Muletillas</th><th>Prosodia</th><th>Temblor</th><th>Cálculo</th><th>Mem. visual</th></tr>
-          ${rows || '<tr><td colspan="14">Sin sesiones registradas aún</td></tr>'}
+          <tr><th>Fecha</th><th>Tipo</th><th>Índice</th><th>Memoria</th><th>Orient.</th><th>Compr.</th><th>Coher.</th><th>Léxico</th><th>Pal/min</th><th>Pausas</th><th>Muletillas</th><th>Prosodia</th><th>Temblor</th><th>Cálculo</th><th>Mem. visual</th></tr>
+          ${rows || '<tr><td colspan="15">Sin sesiones registradas aún</td></tr>'}
         </table>
         </div>
-        <p class="small-note">Prosodia y temblor se calculan con procesamiento de señal real (Web Audio API, autocorrelación) directamente en el navegador durante cada respuesta — no son valores simulados. Son una aproximación liviana: un análisis acústico clínico completo (jitter, shimmer, formantes, como el que entregan openSMILE o Praat) y un análisis lingüístico completo de anomias (PLN con spaCy/BERT en español) requerirían procesamiento fuera del navegador, en un backend dedicado.</p>
+        <p class="small-note">Incluye tanto las conversaciones completas como los ejercicios sueltos de Cálculo y Memoria visual practicados desde la barra inferior — cada fila muestra los datos que corresponden a ese tipo de actividad, y "—" en los que no aplican.</p>
+        <p class="small-note">Prosodia y temblor se calculan con procesamiento de señal real (Web Audio API, autocorrelación) directamente en el navegador durante cada respuesta — no son valores simulados. Es una medición opcional: se activa desde Ajustes → Análisis acústico avanzado. Un análisis acústico clínico completo (jitter, shimmer, formantes, como el que entregan openSMILE o Praat) y un análisis lingüístico completo de anomias (PLN con spaCy/BERT en español) requerirían procesamiento fuera del navegador, en un backend dedicado.</p>
         <p class="small-note">Algunos íconos del módulo de Memoria visual provienen de Flaticon (flaticon.com), usados bajo su licencia gratuita.</p>
-      </div>
-      <div class="dash-section">
-        <h3>Ejercicios sueltos (fuera de la conversación diaria)</h3>
-        <div style="overflow-x:auto;">
-        <table class="vartable">
-          <tr><th>Fecha</th><th>Módulo</th><th>Puntaje</th></tr>
-          ${moduleRuns.slice().reverse().map(r=>`
-          <tr>
-            <td>${new Date(r.date).toLocaleDateString('es-CL')}</td>
-            <td>${r.type==='calculo'?'Cálculo':'Memoria visual'}</td>
-            <td>${r.puntaje}%</td>
-          </tr>`).join('') || '<tr><td colspan="3">Sin ejercicios sueltos registrados aún</td></tr>'}
-        </table>
-        </div>
-        <p class="small-note">Estos ejercicios se practican desde la barra inferior, fuera de la conversación diaria, y no se mezclan con el Índice Cognitivo de la tabla de arriba.</p>
       </div>
     `;
   }

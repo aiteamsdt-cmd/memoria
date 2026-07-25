@@ -294,7 +294,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v35</div>
+    <div class="build-tag no-print">v36</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -1229,6 +1229,12 @@ function listenAuto(){
         // se enciende cuando la persona empieza a hablar de verdad, más abajo.
         hint.textContent = hasSpoken ? 'Tómese su tiempo, lo sigo escuchando…' : 'Le escucho, responda cuando quiera…';
         armWatchdog();
+        // El análisis acústico (si está encendido en Ajustes) se pide recién AQUÍ, una vez
+        // que el reconocimiento de voz ya arrancó sin problemas — nunca antes ni al mismo
+        // tiempo, para que las dos solicitudes de micrófono no compitan entre sí. Como
+        // ensureAudioAnalyser() ya no hace nada si el análisis quedó listo antes, esto es
+        // seguro de llamar en cada turno sin pedir permiso de nuevo cada vez.
+        if(appSettings.acousticEnabled) ensureAudioAnalyser();
       };
       recognizer.onresult = (ev)=>{
         const primeraVezQueHabla = !hasSpoken;
@@ -1471,7 +1477,6 @@ async function startConversation(){
   resetModuleUI();
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
-  if(appSettings.acousticEnabled) ensureAudioAnalyser(); // opcional: no se espera, y solo si está encendido en Ajustes
   await runModule();
 }
 
@@ -1863,7 +1868,6 @@ async function startStandaloneModule(type){
   document.getElementById('typeFallback').classList.remove('active');
   document.getElementById('toggleTypeBtn').textContent = 'Prefiero escribir';
   document.getElementById('progressFill').style.width = '0%';
-  if(type==='memoria_visual' && appSettings.acousticEnabled) ensureAudioAnalyser();
 
   const titulos = {calculo:'Cálculo', memoria_visual:'Memoria visual'};
   document.getElementById('modulePill').textContent = titulos[type] || 'Ejercicio';

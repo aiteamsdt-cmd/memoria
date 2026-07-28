@@ -294,7 +294,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v39</div>
+    <div class="build-tag no-print">v40</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -1195,6 +1195,7 @@ function listenAuto(){
     let settled = false;
     let watchdog = null;
     let errorCount = 0;
+    let endCount = 0;
     const turnStart = Date.now();
 
     const clearWatchdog = ()=>{ if(watchdog){ clearTimeout(watchdog); watchdog=null; } };
@@ -1301,6 +1302,13 @@ function listenAuto(){
           finish();
           return;
         }
+        endCount++;
+        if(endCount >= 5){
+          hint.textContent = 'El micrófono se corta apenas se activa y no logra captar audio. Puede ser un problema del dispositivo/navegador con el micrófono.';
+          finish();
+          return;
+        }
+        hint.textContent = 'El micrófono se cortó solo, reintentando… (' + endCount + ')';
         if(Date.now()-turnStart < MAX_TURN_MS){ setTimeout(startCycle, 300); }
         else finish();
       };

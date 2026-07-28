@@ -294,7 +294,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v38</div>
+    <div class="build-tag no-print">v39</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -1181,7 +1181,12 @@ function stopAcousticSampling(){
 
 function listenAuto(){
   return new Promise(resolve=>{
-    if(!SpeechRecognitionAPI){ resolve(''); return; }
+    const hintEl = document.getElementById('micHint');
+    if(!SpeechRecognitionAPI){
+      if(hintEl) hintEl.textContent = 'Este navegador no tiene reconocimiento de voz disponible.';
+      resolve('');
+      return;
+    }
     const micBtn = document.getElementById('micBtn');
     const live = document.getElementById('userLive');
     const hint = document.getElementById('micHint');
@@ -1189,6 +1194,7 @@ function listenAuto(){
     let hasSpoken = false;
     let settled = false;
     let watchdog = null;
+    let errorCount = 0;
     const turnStart = Date.now();
 
     const clearWatchdog = ()=>{ if(watchdog){ clearTimeout(watchdog); watchdog=null; } };
@@ -1264,13 +1270,26 @@ function listenAuto(){
       };
       recognizer.onerror = (e)=>{
         if(settled) return;
-        if(e && e.error==='aborted') return; // provocado por nuestro propio stop(), se ignora
+        const err = e && e.error;
+        if(err==='aborted') return; // provocado por nuestro propio stop(), se ignora
         if(hasSpoken){
           // Ya había empezado a hablar: se cierra el turno con lo que se alcanzó a
           // capturar, en vez de reiniciar (reiniciar a mitad de frase es lo que duplicaba).
           finish();
           return;
         }
+        errorCount++;
+        if(err==='not-allowed' || err==='service-not-allowed'){
+          hint.textContent = 'El navegador bloqueó el micrófono (permiso denegado). Revise los permisos del sitio.';
+          finish();
+          return;
+        }
+        if(errorCount >= 6){
+          hint.textContent = 'No logro activar el micrófono (error: ' + (err||'desconocido') + '). Intente de nuevo.';
+          finish();
+          return;
+        }
+        hint.textContent = 'Reintentando escuchar… (' + (err||'error') + ')';
         // Todavía no dijo nada: no hay nada que se pueda duplicar, así que sí conviene reintentar.
         if(Date.now()-turnStart < MAX_TURN_MS){ setTimeout(startCycle, 300); }
         else finish();
@@ -1285,7 +1304,7 @@ function listenAuto(){
         if(Date.now()-turnStart < MAX_TURN_MS){ setTimeout(startCycle, 300); }
         else finish();
       };
-      try{ recognizer.start(); }catch(e){ finish(); }
+      try{ recognizer.start(); }catch(e){ hint.textContent = 'No se pudo iniciar el micrófono (' + (e && e.message ? e.message : 'error') + ').'; finish(); }
     };
 
     startCycle();

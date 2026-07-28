@@ -294,7 +294,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v36</div>
+    <div class="build-tag no-print">v38</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -1094,7 +1094,7 @@ function stopAllSpeech(){
    que se dupicara el texto ("voy a voy a almorzar voy a almorzar..."). Si el navegador
    corta la escucha antes de que la persona diga algo, ahí sí se reintenta sin problema
    (no hay nada que se pueda duplicar todavía). */
-const SILENCE_MS  = 3800;   // pausa real tras hablar (~3-4s) = se da la respuesta por terminada
+const SILENCE_MS  = 3000;   // pausa real tras hablar (~3s) = se da la respuesta por terminada
 const MAX_WAIT_MS = 26000;  // tiempo de espera si todavía no empieza a responder
 const MAX_TURN_MS = 100000; // tope absoluto de seguridad por turno
 let manualStopResolve = null; // permite al botón forzar el cierre del turno actual
@@ -1537,6 +1537,11 @@ async function runModule(){
     acoustic: lastAcousticStats
   });
 
+  // Pausa de 2 segundos antes de pasar a la siguiente pregunta: le da a la persona
+  // un respiro entre una respuesta y la próxima, en vez de sentirse apurada.
+  await new Promise(r=>setTimeout(r, 2000));
+  if(stopRequested) return;
+
   currentModuleIndex++;
   await runModule();
 }
@@ -1793,7 +1798,7 @@ async function runMemoriaVisualModule(){
     detalle.push({item:item[1].label, esperada, respuestaTexto:resp, correcto});
 
     if(i < pruebas.length-1){
-      await new Promise(r=>setTimeout(r, 1000));
+      await new Promise(r=>setTimeout(r, 2000));
       if(stopRequested) return;
     }
   }

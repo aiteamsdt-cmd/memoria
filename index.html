@@ -294,7 +294,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v40</div>
+    <div class="build-tag no-print">v42</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -953,7 +953,7 @@ async function speakElevenLabs(text){
    código fuente de la página para cualquiera que la abra. Para un prototipo o uso
    controlado es aceptable (sobre todo restringiendo la clave a esta única API); para
    un lanzamiento público real, esta llamada debería hacerse desde un backend propio. */
-const GOOGLE_TTS_API_KEY = '';  // ← pega aquí tu API key de Google Cloud
+const GOOGLE_TTS_API_KEY = 'AIzaSyBWyZvxE0rGZQE84tiHy_aSv8fZVmtG97Q';  // ← tu API key de Google Cloud
 const GOOGLE_TTS_VOICE   = 'es-US-Neural2-A'; // voz de Memoria (cámbiala si prefieres otra: ver "Voces" en la documentación de Google Cloud TTS. Ej. masculina: 'es-US-Neural2-B')
 const GOOGLE_TTS_GENDER  = 'FEMALE'; // 'FEMALE' o 'MALE' — debe coincidir con la voz elegida arriba
 
@@ -1190,12 +1190,12 @@ function listenAuto(){
     const micBtn = document.getElementById('micBtn');
     const live = document.getElementById('userLive');
     const hint = document.getElementById('micHint');
-    let finalText = '';
+    let accumulatedText = ''; // texto acumulado de TODOS los ciclos de este turno (se suma entre ciclos, no se pierde)
     let hasSpoken = false;
     let settled = false;
     let watchdog = null;
     let errorCount = 0;
-    let endCount = 0;
+    let restartCount = 0;
     const turnStart = Date.now();
 
     const clearWatchdog = ()=>{ if(watchdog){ clearTimeout(watchdog); watchdog=null; } };
@@ -1212,12 +1212,13 @@ function listenAuto(){
         try{ recognizer.stop(); }catch(e){}
       }
       listening=false; micBtn.classList.remove('listening');
-      resolve(limpiarRepeticiones(finalText.replace(/\s+/g,' ').trim()));
+      resolve(limpiarRepeticiones(accumulatedText.replace(/\s+/g,' ').trim()));
     };
     manualStopResolve = finish;
 
-    // El "vigía" decide cuándo cerrar el turno: espera una pausa real tras la voz,
-    // o el tiempo máximo de paciencia si la persona todavía no empieza a hablar.
+    // El "vigía" es el ÚNICO que decide cuándo se acaba el turno de verdad: espera una
+    // pausa real tras la voz, o el tiempo máximo de paciencia si todavía no habló nada.
+    // Es independiente de que el reconocedor del navegador se reinicie por su cuenta.
     const armWatchdog = ()=>{
       clearWatchdog();
       watchdog = setTimeout(finish, hasSpoken ? SILENCE_MS : MAX_WAIT_MS);
@@ -1228,28 +1229,28 @@ function listenAuto(){
       recognizer = new SpeechRecognitionAPI();
       recognizer.lang = 'es-CL';
       recognizer.interimResults = true;
-      recognizer.continuous = true;
+      // IMPORTANTE: en varios celulares Android, el modo "continuo" del reconocimiento
+      // de voz es inestable y se corta solo apenas arranca, sin lanzar ningún error
+      // (por eso funcionaba en computador pero no en teléfono). Para evitar depender de
+      // eso, se usan ciclos cortos NO continuos que se reinician solos automáticamente;
+      // la app arma la "escucha larga" por su cuenta, encadenando ciclos, y el vigía de
+      // arriba (basado en SILENCE_MS) es quien decide cuándo el turno terminó de verdad.
+      recognizer.continuous = false;
       recognizer.maxAlternatives = 1;
 
       recognizer.onstart = ()=>{
-        // El micrófono queda listo, pero el indicador visual "activo" (pulso rojo) recién
-        // se enciende cuando la persona empieza a hablar de verdad, más abajo.
         hint.textContent = hasSpoken ? 'Tómese su tiempo, lo sigo escuchando…' : 'Le escucho, responda cuando quiera…';
         armWatchdog();
         // El análisis acústico (si está encendido en Ajustes) se pide recién AQUÍ, una vez
         // que el reconocimiento de voz ya arrancó sin problemas — nunca antes ni al mismo
-        // tiempo, para que las dos solicitudes de micrófono no compitan entre sí. Como
-        // ensureAudioAnalyser() ya no hace nada si el análisis quedó listo antes, esto es
-        // seguro de llamar en cada turno sin pedir permiso de nuevo cada vez.
+        // tiempo, para que las dos solicitudes de micrófono no compitan entre sí.
         if(appSettings.acousticEnabled) ensureAudioAnalyser();
       };
       recognizer.onresult = (ev)=>{
         const primeraVezQueHabla = !hasSpoken;
         hasSpoken = true;
+        errorCount = 0; restartCount = 0; // el micrófono sí está funcionando: se resetean los contadores
         if(primeraVezQueHabla){ listening=true; micBtn.classList.add('listening'); startAcousticSampling(); }
-        // Se recalcula TODO el texto final de este único ciclo desde el resultado 0 cada vez
-        // (nunca se suma con += entre ciclos, porque este ciclo nunca se reinicia una vez
-        // que la persona empezó a hablar).
         let finalChunk = '';
         let interim = '';
         for(let i=0; i<ev.results.length; i++){
@@ -1257,10 +1258,11 @@ function listenAuto(){
           if(ev.results[i].isFinal) finalChunk += t + ' ';
           else interim += t;
         }
-        finalText = finalChunk;
-        // Se muestra en pantalla lo reconocido en tiempo real: permite verificar que la
-        // aplicación está entendiendo bien lo que dice la persona.
-        live.textContent = limpiarRepeticiones((finalText + interim).replace(/\s+/g,' ').trim());
+        // Cada ciclo (modo no continuo) entrega una frase limpia y completa, así que sumarla
+        // al total acumulado es seguro — no es lo mismo que reiniciar a mitad de una frase
+        // en modo continuo (eso sí duplicaba palabras).
+        if(finalChunk) accumulatedText += finalChunk;
+        live.textContent = limpiarRepeticiones((accumulatedText + interim).replace(/\s+/g,' ').trim());
         hint.textContent = 'Le escucho…';
         armWatchdog();
       };
@@ -1273,43 +1275,38 @@ function listenAuto(){
         if(settled) return;
         const err = e && e.error;
         if(err==='aborted') return; // provocado por nuestro propio stop(), se ignora
-        if(hasSpoken){
-          // Ya había empezado a hablar: se cierra el turno con lo que se alcanzó a
-          // capturar, en vez de reiniciar (reiniciar a mitad de frase es lo que duplicaba).
-          finish();
-          return;
-        }
-        errorCount++;
         if(err==='not-allowed' || err==='service-not-allowed'){
           hint.textContent = 'El navegador bloqueó el micrófono (permiso denegado). Revise los permisos del sitio.';
           finish();
           return;
         }
-        if(errorCount >= 6){
+        errorCount++;
+        if(!hasSpoken && errorCount >= 8){
           hint.textContent = 'No logro activar el micrófono (error: ' + (err||'desconocido') + '). Intente de nuevo.';
           finish();
           return;
         }
-        hint.textContent = 'Reintentando escuchar… (' + (err||'error') + ')';
-        // Todavía no dijo nada: no hay nada que se pueda duplicar, así que sí conviene reintentar.
-        if(Date.now()-turnStart < MAX_TURN_MS){ setTimeout(startCycle, 300); }
+        if(!hasSpoken) hint.textContent = 'Reintentando escuchar… (' + (err||'error') + ')';
+        // El vigía (armado en el último resultado) sigue corriendo aparte y decide si ya
+        // hubo suficiente silencio real; acá solo se reinicia el ciclo del reconocedor.
+        if(Date.now()-turnStart < MAX_TURN_MS) setTimeout(startCycle, 200);
         else finish();
       };
       recognizer.onend = ()=>{
         if(settled) return;
-        listening=false; micBtn.classList.remove('listening');
-        if(hasSpoken){
-          finish();
-          return;
+        if(!hasSpoken){
+          micBtn.classList.remove('listening');
+          restartCount++;
+          if(restartCount >= 10){
+            hint.textContent = 'El micrófono se corta apenas se activa y no logra captar audio. Puede ser un problema del dispositivo/navegador con el micrófono.';
+            finish();
+            return;
+          }
         }
-        endCount++;
-        if(endCount >= 5){
-          hint.textContent = 'El micrófono se corta apenas se activa y no logra captar audio. Puede ser un problema del dispositivo/navegador con el micrófono.';
-          finish();
-          return;
-        }
-        hint.textContent = 'El micrófono se cortó solo, reintentando… (' + endCount + ')';
-        if(Date.now()-turnStart < MAX_TURN_MS){ setTimeout(startCycle, 300); }
+        // En modo no continuo, cada ciclo termina solo apenas procesa una frase — eso es
+        // normal, no un error. Se reinicia enseguida para seguir escuchando; el vigía de
+        // arriba es quien realmente decide cuándo se acaba el turno.
+        if(Date.now()-turnStart < MAX_TURN_MS) setTimeout(startCycle, 120);
         else finish();
       };
       try{ recognizer.start(); }catch(e){ hint.textContent = 'No se pudo iniciar el micrófono (' + (e && e.message ? e.message : 'error') + ').'; finish(); }

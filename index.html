@@ -294,7 +294,7 @@ table.vartable th{color:var(--ink-soft); font-weight:600;}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       Iniciar conversación
     </button>
-    <div class="build-tag no-print">v42</div>
+    <div class="build-tag no-print">v43</div>
   </section>
 
   <!-- ============ CONVERSATION ============ -->
@@ -497,6 +497,7 @@ function loadStorage(){
   }catch(e){ moduleRuns = []; }
   loadVariantQueues();
   loadSettings();
+  loadRecuerdos();
 }
 function saveSessions(){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(sessions)); }
@@ -714,6 +715,51 @@ function setSetting(key, value){
    para no salir de lo que soportan las APIs de voz. */
 function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
 function conVelocidad(base, min, max){ return clamp(base * (appSettings.voiceRate||1), min, max); }
+
+/* =========================================================
+   RECUERDOS ENTRE CONVERSACIONES
+   Después de cada conversación, se le pide a la IA que anote 2-4 datos breves y
+   cálidos que valga la pena recordar (nombres de familiares, eventos próximos,
+   gustos, mascotas) — explícitamente NADA sobre desempeño cognitivo ni evaluación.
+   Esos datos se guardan en el dispositivo y se le recuerdan a la IA al iniciar
+   conversaciones futuras, para que pueda retomarlos con naturalidad.
+========================================================= */
+const MEMORIES_KEY = 'memoria-recuerdos';
+let recuerdos = []; // [{date, texto}]
+function loadRecuerdos(){
+  try{
+    const raw = localStorage.getItem(MEMORIES_KEY);
+    if(raw) recuerdos = JSON.parse(raw);
+  }catch(e){ recuerdos = []; }
+}
+function saveRecuerdos(){
+  try{ localStorage.setItem(MEMORIES_KEY, JSON.stringify(recuerdos)); }catch(e){}
+}
+async function extraerRecuerdos(turns){
+  const conVoz = turns.filter(t=>t.userText && t.userText.trim());
+  if(conVoz.length < 2) return; // muy poco contenido como para sacar algo memorable
+  const textoConversacion = conVoz.map(t=>`Pregunta: ${t.aiText}\nRespuesta: ${t.userText}`).join('\n\n');
+  const prompt = `Lee esta conversación con ${userName}, una persona mayor, y anota entre 2 y 4 datos breves, concretos y cálidos que valga la pena recordar para conversaciones futuras (nombres de familiares o amigos mencionados, eventos próximos, gustos, mascotas, temas que le importan). NUNCA anotes nada sobre su desempeño, memoria, ni evaluación cognitiva — solo datos de su vida cotidiana y vínculos. Si no hay nada memorable, responde solo con la palabra NADA. Responde con una lista simple, un dato por línea, sin numeración ni explicaciones.\n\n${textoConversacion}`;
+  try{
+    const respuesta = await askClaude(
+      'Eres un asistente que anota datos personales breves y cálidos de una conversación, para recordarlos después. Nunca inventes datos que no se mencionaron explícitamente.',
+      [{role:'user', content:prompt}]
+    );
+    if(!respuesta || /^nada\b/i.test(respuesta.trim())) return;
+    const lineas = respuesta.split('\n').map(l=>l.replace(/^[-•\d.]+\s*/,'').trim()).filter(Boolean);
+    const fecha = new Date().toISOString();
+    lineas.forEach(l=> recuerdos.push({date:fecha, texto:l}));
+    recuerdos = recuerdos.slice(-20); // se conservan solo los 20 más recientes
+    saveRecuerdos();
+  }catch(e){ console.warn('No se pudieron extraer recuerdos de esta conversación:', e); }
+}
+/* Arma el bloque de contexto con los recuerdos más recientes, para incluirlo en las
+   instrucciones de la IA al conversar. Devuelve texto vacío si no hay recuerdos aún. */
+function formatRecuerdos(){
+  if(!recuerdos.length) return '';
+  const recientes = recuerdos.slice(-8).map(r=>'- '+r.texto).join('\n');
+  return `\n\nCosas que ${userName} mencionó en charlas anteriores (puedes retomarlas con calidez si encajan naturalmente en la conversación de hoy, sin forzarlo ni sonar como que la estás vigilando; ignóralas si no vienen al caso):\n${recientes}`;
+}
 
 function pickVariant(mod){
   if(mod.variants.length===1) return mod.variants[0];
@@ -1535,7 +1581,7 @@ async function runModule(){
   ]);
   history.push({role:'user', content:`[Objetivo del turno actual — ${mod.titulo}]: ${goalTexto}`});
 
-  const sysPrompt = SYSTEM_PROMPT.replace(/{name}/g, userName).replace(/{gender_word}/g, userGender==='m' ? 'masculino' : 'femenino');
+  const sysPrompt = SYSTEM_PROMPT.replace(/{name}/g, userName).replace(/{gender_word}/g, userGender==='m' ? 'masculino' : 'femenino') + formatRecuerdos();
   let aiText = await askClaude(sysPrompt, history.length ? history : [{role:'user', content:goalTexto}]);
   if(!aiText) aiText = fallbackTexto;
 
@@ -1874,6 +1920,7 @@ async function finishConversation(){
   };
   sessions.push(session);
   await saveSessions();
+  extraerRecuerdos(currentTurns); // en segundo plano, no bloquea el resumen
   renderSummary(session);
   showView('summary');
 }
@@ -2082,6 +2129,14 @@ function renderDashboard(){
       <div class="dash-section">
         <h3>Ejercicios sueltos recientes</h3>
         <p class="small-note" style="margin-top:0">${moduleRuns.length} ejercicio(s) practicados fuera de la conversación diaria (Cálculo o Memoria visual).</p>
+      </div>` : ''}
+      ${recuerdos.length ? `
+      <div class="dash-section">
+        <h3>Lo que la IA recuerda de charlas anteriores</h3>
+        <p class="small-note" style="margin-top:0">Datos de la vida cotidiana de ${userName} que la aplicación retoma con naturalidad en futuras conversaciones (nunca información de desempeño o evaluación):</p>
+        <ul style="margin:6px 0 0; padding-left:20px; color:var(--ink-soft); font-size:.9rem;">
+          ${recuerdos.slice(-8).reverse().map(r=>`<li style="margin-bottom:4px;">${r.texto}</li>`).join('')}
+        </ul>
       </div>` : ''}
       <p class="small-note">Memoria es una herramienta de apoyo y seguimiento, no reemplaza una evaluación médica formal.</p>
     `;
